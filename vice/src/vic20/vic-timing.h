@@ -28,13 +28,13 @@
 #define VICE_VIC_TIMING_H
 
 /* PAL: total screen dimension of 224x283 + 284th rasterline in bordercolor */
-#define VIC_PAL_NORMAL_FIRST_DISPLAYED_LINE         28
-#define VIC_PAL_NORMAL_LAST_DISPLAYED_LINE          311
+#define VIC_PAL_NORMAL_FIRST_DISPLAYED_LINE         60 /* 28 */
+#define VIC_PAL_NORMAL_LAST_DISPLAYED_LINE          279 /* 311 */
 #define VIC_PAL_NORMAL_DISPLAY_WIDTH                224
 #define VIC_PAL_NORMAL_LEFTBORDERWIDTH              12
 
-#define VIC_PAL_FULL_FIRST_DISPLAYED_LINE           18
-#define VIC_PAL_FULL_LAST_DISPLAYED_LINE            311
+#define VIC_PAL_FULL_FIRST_DISPLAYED_LINE           28 /* 18 */
+#define VIC_PAL_FULL_LAST_DISPLAYED_LINE            311 /* 311 */
 #define VIC_PAL_FULL_DISPLAY_WIDTH                  256
 #define VIC_PAL_FULL_LEFTBORDERWIDTH                12
 

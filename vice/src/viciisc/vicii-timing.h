@@ -65,10 +65,10 @@
    - "full" shows all lines minus the vertical retrace
    - "debug" mode shows all lines, including vertical retrace
 */
-#define VICII_PAL_NORMAL_FIRST_DISPLAYED_LINE        0x10   /* 16 */
-#define VICII_PAL_NORMAL_LAST_DISPLAYED_LINE         0x11f  /* 287 */
-#define VICII_PAL_FULL_FIRST_DISPLAYED_LINE          0x08   /* 8 */
-#define VICII_PAL_FULL_LAST_DISPLAYED_LINE           0x12c  /* 300 */
+#define VICII_PAL_NORMAL_FIRST_DISPLAYED_LINE        0x28   /* 16 */
+#define VICII_PAL_NORMAL_LAST_DISPLAYED_LINE         0x107  /* 287 */
+#define VICII_PAL_FULL_FIRST_DISPLAYED_LINE          0x10   /* 8 - CCS like: 0x28 */
+#define VICII_PAL_FULL_LAST_DISPLAYED_LINE           0x11f  /* 300 -CCS like: 0x107 */
 #define VICII_PAL_DEBUG_FIRST_DISPLAYED_LINE         0x00   /* 0 */
 #define VICII_PAL_DEBUG_LAST_DISPLAYED_LINE          0x137  /* 311 */
 
@@ -106,10 +106,10 @@ NTSC display ranges:
 #define VICII_NTSCOLD_DEBUG_FIRST_DISPLAYED_LINE     0x14   /* 0 + 20 */
 #define VICII_NTSCOLD_DEBUG_LAST_DISPLAYED_LINE      0x119  /* 261 + 20 */
 
-#define VICII_PALN_NORMAL_FIRST_DISPLAYED_LINE       0x10   /* 16 */
-#define VICII_PALN_NORMAL_LAST_DISPLAYED_LINE        0x11f  /* 287 */
-#define VICII_PALN_FULL_FIRST_DISPLAYED_LINE         0x08   /* 8 */
-#define VICII_PALN_FULL_LAST_DISPLAYED_LINE          0x12c  /* 300 */
+#define VICII_PALN_NORMAL_FIRST_DISPLAYED_LINE       0x28   /* 16 */
+#define VICII_PALN_NORMAL_LAST_DISPLAYED_LINE        0x107  /* 287 */
+#define VICII_PALN_FULL_FIRST_DISPLAYED_LINE         0x10   /* 8 */
+#define VICII_PALN_FULL_LAST_DISPLAYED_LINE          0x11f  /* 300 */
 #define VICII_PALN_DEBUG_FIRST_DISPLAYED_LINE        0x00   /* 0 */
 #define VICII_PALN_DEBUG_LAST_DISPLAYED_LINE         0x137  /* 311 */
 

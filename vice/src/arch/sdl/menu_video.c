@@ -61,11 +61,11 @@ UI_MENU_DEFINE_RADIO(VICBorderMode)
 UI_MENU_DEFINE_RADIO(TEDBorderMode)
 
 static const ui_menu_entry_t vicii_border_menu[] = {
-    { "Normal",
+    { "Compact",
       MENU_ENTRY_RESOURCE_RADIO,
       radio_VICIIBorderMode_callback,
       (ui_callback_data_t)VICII_NORMAL_BORDERS },
-    { "Full",
+    { "Normal",
       MENU_ENTRY_RESOURCE_RADIO,
       radio_VICIIBorderMode_callback,
       (ui_callback_data_t)VICII_FULL_BORDERS },
@@ -81,11 +81,11 @@ static const ui_menu_entry_t vicii_border_menu[] = {
 };
 
 static const ui_menu_entry_t vic_border_menu[] = {
-    { "Normal",
+    { "Compact",
       MENU_ENTRY_RESOURCE_RADIO,
       radio_VICBorderMode_callback,
       (ui_callback_data_t)VIC_NORMAL_BORDERS },
-    { "Full",
+    { "Normal",
       MENU_ENTRY_RESOURCE_RADIO,
       radio_VICBorderMode_callback,
       (ui_callback_data_t)VIC_FULL_BORDERS },

@@ -51,10 +51,10 @@
  * for each $CHIP with the same values.
  */
 static const vice_gtk3_radiogroup_entry_t modes[] = {
-    { "Normal",  0 },   /* chip_NORMAL_BORDERS */
-    { "Full",    1 },   /* chip_FULL_BORDERS */
-    { "Debug",   2 },   /* chip_DEBUG_BORDERS */
-    { "None",    3 },   /* chip_NO_BORDERS */
+    { "Compact", 0 },
+    { "Normal",  1 },
+    { "Debug",   2 },
+    { "None",    3 },
     { NULL,     -1 }
 };
 
