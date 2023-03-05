@@ -146,7 +146,7 @@
 #include "settings_sound.h"
 #include "settings_soundchip.h"
 #include "settings_speed.h"
-#include "settings_supersnapshot.h"
+#include "settings_supersnapshotv5.h"
 #include "settings_tapeport.h"
 #include "settings_ultimem.h"
 #include "settings_userport.h"
@@ -330,11 +330,11 @@ static ui_settings_tree_node_t c64_cartridges[] = {
       "isepic",
       settings_isepic_widget_create, NULL },
     { CARTRIDGE_NAME_RETRO_REPLAY,
-      "retroreplay",
+      "retro-replay",
       settings_retroreplay_widget_create, NULL },
     { CARTRIDGE_NAME_SUPER_SNAPSHOT_V5,
-      "super-snapshot",
-      settings_supersnapshot_widget_create, NULL },
+      "super-snapshot-v5",
+      settings_supersnapshotv5_widget_create, NULL },
 #ifdef HAVE_RAWNET
 
     UI_SETTINGS_SEPARATOR,
@@ -369,7 +369,7 @@ static ui_settings_tree_node_t c64_cartridges[] = {
       "mmc64",
       settings_mmc64_widget_create, NULL },
     { CARTRIDGE_NAME_MMC_REPLAY,
-      "mmcr",
+      "mmc-replay",
       settings_mmcr_widget_create, NULL },
 
     UI_SETTINGS_SEPARATOR,
@@ -388,10 +388,10 @@ static ui_settings_tree_node_t c64_cartridges[] = {
       settings_midi_widget_create, NULL },
 #endif
     { CARTRIDGE_NAME_SFX_SOUND_EXPANDER,
-      "sfx-expander",
+      "sfx-sound-expander",
       settings_sfxsoundexpander_widget_create, NULL },
     { CARTRIDGE_NAME_SFX_SOUND_SAMPLER,
-      "sfx-sampler",
+      "sfx-sound-sampler",
       settings_sfxsoundsampler_widget_create, NULL },
 
     UI_SETTINGS_SEPARATOR,
@@ -469,11 +469,11 @@ static ui_settings_tree_node_t scpu64_cartridges[] = {
       "isepic",
       settings_isepic_widget_create, NULL },
     { CARTRIDGE_NAME_RETRO_REPLAY,
-      "retroreplay",
+      "retro-replay",
       settings_retroreplay_widget_create, NULL },
     { CARTRIDGE_NAME_SUPER_SNAPSHOT_V5,
-      "super-snapshot",
-      settings_supersnapshot_widget_create, NULL },
+      "super-snapshot-v5",
+      settings_supersnapshotv5_widget_create, NULL },
 #ifdef HAVE_RAWNET
 
     UI_SETTINGS_SEPARATOR,
@@ -502,7 +502,7 @@ static ui_settings_tree_node_t scpu64_cartridges[] = {
       "mmc64",
       settings_mmc64_widget_create, NULL },
     { CARTRIDGE_NAME_MMC_REPLAY,
-      "mmcr",
+      "mmc-replay",
       settings_mmcr_widget_create, NULL },
 
     UI_SETTINGS_SEPARATOR,
@@ -521,10 +521,10 @@ static ui_settings_tree_node_t scpu64_cartridges[] = {
       settings_midi_widget_create, NULL },
 #endif
     { CARTRIDGE_NAME_SFX_SOUND_EXPANDER,
-      "sfx-expander",
+      "sfx-sound-expander",
       settings_sfxsoundexpander_widget_create, NULL },
     { CARTRIDGE_NAME_SFX_SOUND_SAMPLER,
-      "sfx-sampler",
+      "sfx-sound-sampler",
       settings_sfxsoundsampler_widget_create, NULL },
 
     UI_SETTINGS_SEPARATOR,
@@ -598,11 +598,11 @@ static ui_settings_tree_node_t c128_cartridges[] = {
       "isepic",
       settings_isepic_widget_create, NULL },
     { CARTRIDGE_NAME_RETRO_REPLAY,
-      "retroreplay",
+      "retro-replay",
       settings_retroreplay_widget_create, NULL },
     { CARTRIDGE_NAME_SUPER_SNAPSHOT,
-      "super-snapshot",
-      settings_supersnapshot_widget_create, NULL },
+      "super-snapshot-v5",
+      settings_supersnapshotv5_widget_create, NULL },
 #ifdef HAVE_RAWNET
     UI_SETTINGS_SEPARATOR,
 
@@ -632,7 +632,7 @@ static ui_settings_tree_node_t c128_cartridges[] = {
       "mmc64",
       settings_mmc64_widget_create, NULL },
     { CARTRIDGE_NAME_MMC_REPLAY,
-      "mmcr",
+      "mmc-replay",
       settings_mmcr_widget_create, NULL },
 
     UI_SETTINGS_SEPARATOR,
@@ -651,10 +651,10 @@ static ui_settings_tree_node_t c128_cartridges[] = {
       settings_midi_widget_create, NULL },
 #endif
     { CARTRIDGE_NAME_SFX_SOUND_EXPANDER,
-      "sfx-expander",
+      "sfx-sound-expander",
       settings_sfxsoundexpander_widget_create, NULL },
     { CARTRIDGE_NAME_SFX_SOUND_SAMPLER,
-      "sfx-sampler",
+      "sfx-sound-sampler",
       settings_sfxsoundsampler_widget_create, NULL },
 
     UI_SETTINGS_SEPARATOR,
@@ -739,10 +739,10 @@ static ui_settings_tree_node_t vic20_cartridges[] = {
       "geo-ram",
       settings_georam_widget_create, NULL },
     { CARTRIDGE_NAME_SFX_SOUND_EXPANDER " (MasC=uerade)",
-      "sfx-expander",
+      "sfx-sound-expander",
       settings_sfxsoundexpander_widget_create, NULL },
     { CARTRIDGE_NAME_SFX_SOUND_SAMPLER " (MasC=uerade)",
-      "sfx-sampler",
+      "sfx-sound-sampler",
       settings_sfxsoundsampler_widget_create, NULL },
 
     UI_SETTINGS_TERMINATOR
@@ -761,8 +761,8 @@ static ui_settings_tree_node_t plus4_io_extensions[] = {
 
     /* Audio Expansions + Adapters */
 
-    { "Digiblaster add-on",
-      "digiblaster",
+    { "Digi-Blaster add-on",
+      "digi-blaster",
       settings_plus4_digiblaster_widget_create, NULL },
     { "SID Card",
       "sid-card",
@@ -888,7 +888,7 @@ static ui_settings_tree_node_t machine_nodes_c64[] = {
       "io",
       settings_io_widget_create, NULL },
     { "Burst Mode Modification",
-      "burstmode",
+      "burst-mode",
       settings_burstmode_widget_create, NULL },
     UI_SETTINGS_TERMINATOR
 };
@@ -1274,7 +1274,7 @@ static ui_settings_tree_node_t machine_nodes_scpu64[] = {
       "io",
       settings_io_widget_create, NULL },
     { "Burst Mode Modification",
-      "burstmode-mode",
+      "burst-mode",
       settings_burstmode_widget_create, NULL },
     UI_SETTINGS_TERMINATOR
 };

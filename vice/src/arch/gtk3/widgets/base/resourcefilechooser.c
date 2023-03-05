@@ -52,6 +52,8 @@ typedef struct fc_state_s {
     GtkFileFilter        *all_files;    /**< filter for '*' */
     gboolean              confirm;      /**< confirm before overwriting in case
                                              of GTK_FILE_CHOOSER_ACTION_SAVE */
+    /**< brief  User-defined function to call on succesfull resource update */
+    void                (*callback)(GtkEntry *, gchar *);
 } fc_state_t;
 
 
@@ -68,7 +70,7 @@ static fc_state_t *fc_state_new(void)
     state->filter       = NULL;
     state->all_files    = NULL;
     state->custom_title = NULL;
-
+    state->callback     = NULL;
     return state;
 }
 
@@ -130,8 +132,14 @@ static gboolean set_resource_and_entry(GtkEntry *entry, const char *text)
             gtk_entry_set_text(entry, res_text);
             result = FALSE;
         } else {
+            fc_state_t *state = mediator_get_data(mediator);
+
             /* update entry */
             gtk_entry_set_text(entry, text);
+            /* call user-defined function, if present */
+            if (state->callback != NULL) {
+                state->callback(entry, g_strdup(text));
+            }
         }
         /* move cursor to the end, the final part of a path is more significant */
         gtk_editable_set_position(GTK_EDITABLE(entry), -1);
@@ -242,6 +250,11 @@ static void on_icon_press(GtkEntry             *self,
     respath  = mediator_get_resource_string(mediator);
     dirpart  = g_path_get_dirname(respath);
     filepart = g_path_get_basename(respath);
+#if 0
+    g_print("%s(): respath  = \"%s\"\n", __func__, respath);
+    g_print("%s(): dirpart  = \"%s\"\n", __func__, dirpart);
+    g_print("%s(): filepart = \"%s\"\n", __func__, filepart);
+#endif
     gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), respath);
 
     /* set action-specific dialog properties */
@@ -249,8 +262,13 @@ static void on_icon_press(GtkEntry             *self,
         case GTK_FILE_CHOOSER_ACTION_SAVE:
             gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog),
                                                            state->confirm);
-            gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog),
-                                              filepart);
+            /* we don't want a period if the path in the resource is empty:
+             * (g_path_get_basename("") returns ".")
+             */
+            if (g_strcmp0(filepart, ".") != 0) {
+                gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog),
+                                                  filepart);
+            }
             /* fall through */
         case GTK_FILE_CHOOSER_ACTION_OPEN:
             if ((g_strcmp0(dirpart, ".") == 0) && (state->directory != NULL)) {
@@ -539,10 +557,29 @@ void vice_gtk3_resource_filechooser_set_custom_title(GtkWidget  *widget,
                                                      const char *title)
 {
     mediator_t *mediator = mediator_for_widget(widget);
-
     if (mediator != NULL) {
         fc_state_t *state = mediator_get_data(mediator);
         state->custom_title = g_strdup(title);
     }
 }
 
+/** \brief  Set function to be called on succesfull update of the resource
+ *
+ * Set function that will be called with the new resource value and a reference
+ * to the \a widget when the bound resource is successfully updated.
+ *
+ * The string passed to the \a callback is allocated using g_strdup() and should
+ * be freed with g_free().
+ *
+ * \param[in]   widget      resource filechooser widget
+ * \param[in]   callback    function to call on succesfull resource update
+ */
+void vice_gtk3_resource_filechooser_set_callback(GtkWidget *widget,
+                                                 void (*callback)(GtkEntry *, gchar *))
+{
+    mediator_t *mediator = mediator_for_widget(widget);
+    if (mediator != NULL) {
+        fc_state_t *state = mediator_get_data(mediator);
+        state->callback = callback;
+    }
+}

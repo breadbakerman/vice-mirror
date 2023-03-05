@@ -66,7 +66,7 @@
 #endif
 
 /* MMU register.  */
-static uint8_t mmu[12];
+uint8_t mmu[12];
 
 /* latches for P0H and P1H */
 static uint8_t p0h_latch, p1h_latch;
@@ -360,6 +360,7 @@ static void mmu_switch_to_c64mode(void)
             c64_mode_bank = ((mmu[0] >> 6) & 0x1);
         }
         in_c64_mode = 1;
+        z80mem_update_config(8 + (mmu_config64 & 7));
     }
     keyboard_alternative_set(1);
     machine_kbdbuf_reset_c64();
@@ -535,6 +536,23 @@ void mmu_store(uint16_t address, uint8_t value)
     }
 }
 
+/* z80 version of the mmu read using in/out, the mmu i/o range for the z80 depends on the mmu i/o bit */
+uint8_t z80_c128_mmu_read(uint16_t addr)
+{
+    if (mmu[0] & 1) {
+        return 0;
+    }
+    return mmu_read(addr);
+}
+
+/* z80 version of the mmu store using in/out, the mmu i/o range for the z80 depends on the mmu i/o bit */
+void z80_c128_mmu_store(uint16_t address, uint8_t value)
+{
+    if (!(mmu[0] & 1)) {
+        mmu_store(address, value);
+    }
+}
+
 /* $FF00 - $FFFF: RAM, Kernal or internal function ROM, with MMU at
    $FF00 - $FF04.  */
 uint8_t mmu_ffxx_read(uint16_t addr)
@@ -551,15 +569,6 @@ uint8_t mmu_ffxx_read(uint16_t addr)
         vicii.last_cpu_val = top_shared_read(addr);
     }
     return vicii.last_cpu_val;
-}
-
-uint8_t mmu_ffxx_read_z80(uint16_t addr)
-{
-    if (addr >= 0xff00 && addr <= 0xff04) {
-        return mmu[addr & 0xf];
-    }
-
-    return top_shared_read(addr);
 }
 
 void mmu_ffxx_store(uint16_t addr, uint8_t value)

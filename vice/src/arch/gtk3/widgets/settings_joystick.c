@@ -266,6 +266,9 @@ static int layout_add_control_ports(GtkGrid *layout, int row, int count)
     gtk_grid_attach(GTK_GRID(layout),
                     device_widgets[JOYPORT_1],
                     0, row, 1, 1);
+    /* add spacing */
+    gtk_widget_set_margin_bottom(device_widgets[JOYPORT_1], 8);
+
     /* control port #2 */
     if (count > 1) {
         device_widgets[JOYPORT_2] = joystick_device_widget_create(
@@ -306,6 +309,7 @@ static int layout_add_adapter_ports(GtkGrid *layout, int row, int count)
             g_snprintf(label, sizeof(label), "Joystick Adapter Port #%d", i + 1);
             device_widgets[i + 2] = joystick_device_widget_create(d, label);
             gtk_grid_attach(layout, device_widgets[i + 2], c, r, 1, 1);
+            gtk_widget_set_margin_bottom(device_widgets[i + 2], 8);
         }
         d++;
         c ^= 1; /* switch column position */
@@ -333,6 +337,7 @@ static int layout_add_adapter_ports(GtkGrid *layout, int row, int count)
  */
 static int layout_add_sidcard_port(GtkGrid *layout, int row)
 {
+    /* not JOYPORT_5 because the API is retarded: JOYPORT_5 == 4 */
     if (joyport_has_mapping(5)) {
         device_widgets[JOYPORT_5] = joystick_device_widget_create(
                 JOYPORT_5, "SIDCard Joystick");
