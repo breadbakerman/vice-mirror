@@ -718,7 +718,7 @@ void cartridge_unset_default(void)
     cartridge_type = CARTRIDGE_NONE;
 }
 
-const char *cartridge_get_file_name(int addr)
+const char *cartridge_get_filename_by_type(int addr)
 {
     if (vic20cart_type == CARTRIDGE_VIC20_GENERIC) {
         /* special case handling for the multiple file generic type */
@@ -776,6 +776,11 @@ int cartridge_flush_image(int type)
     return -1;
 }
 
+int cartridge_flush_secondary_image(int type)
+{
+    return -1;
+}
+
 int cartridge_save_image(int type, const char *filename)
 {
 /* FIXME: this can be used once we implement a crt like format for vic20 */
@@ -786,6 +791,11 @@ int cartridge_save_image(int type, const char *filename)
     }
 #endif
     return cartridge_bin_save(type, filename);
+}
+
+int cartridge_save_secondary_image(int type, const char *filename)
+{
+    return -1;
 }
 
 int cartridge_type_enabled(int crtid)
@@ -807,11 +817,16 @@ int cartridge_can_flush_image(int crtid)
     if (!cartridge_type_enabled(crtid)) {
         return 0;
     }
-    p = cartridge_get_file_name(crtid);
+    p = cartridge_get_filename_by_type(crtid);
     if ((p == NULL) || (*p == '\x0')) {
         return 0;
     }
     return 1;
+}
+
+int cartridge_can_flush_secondary_image(int crtid)
+{
+    return 0;
 }
 
 /* returns 1 when cartridge (ROM) image can be saved */
@@ -821,6 +836,49 @@ int cartridge_can_save_image(int crtid)
         return 0;
     }
     return 1;
+}
+
+int cartridge_can_save_secondary_image(int crtid)
+{
+    return 0;
+}
+
+cartridge_info_t *cartridge_get_info_list(void)
+{
+    return NULL;
+}
+
+/* return cartridge type of main slot
+   returns 0 (CARTRIDGE_CRT) if crt file */
+int cartridge_get_id(int slot)
+{
+    return CARTRIDGE_NONE;
+}
+
+/* FIXME: slot arg is ignored right now.
+   this should return a pointer to a filename, or NULL
+*/
+char *cartridge_get_filename_by_slot(int slot)
+{
+    if (vic20cart_type == CARTRIDGE_VIC20_GENERIC) {
+        /* special case handling for the multiple file generic type */
+        /* return generic_get_file_name((uint16_t)addr); */
+        log_warning(LOG_DEFAULT, "FIXME: cartridge_get_filename_by_slot not implemented for generic type");
+    }
+
+    return cartfile;
+}
+
+/* FIXME: slot arg is ignored right now.
+   this should return a pointer to a filename, or NULL
+*/
+char *cartridge_get_secondary_filename_by_slot(int slot)
+{
+    return NULL;
+}
+
+void cartridge_trigger_freeze(void)
+{
 }
 
 /* ------------------------------------------------------------------------- */

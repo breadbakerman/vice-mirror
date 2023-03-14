@@ -71,7 +71,8 @@ int cartridge_get_id(int slot);
 /* FIXME: slot arg is ignored right now.
    this should return a pointer to a filename, or NULL
 */
-char *cartridge_get_filename(int slot);
+char *cartridge_get_filename_by_slot(int slot);
+char *cartridge_get_secondary_filename_by_slot(int slot);
 
 /* FIXME: this should also be made a generic function that takes the type */
 /* set current "Main Slot" cart as default */
@@ -96,10 +97,10 @@ void cartridge_trigger_freeze_nmi_only(void);
 /* FIXME: this should also be made a generic function that takes the type */
 void cartridge_release_freeze(void);
 
-const char *cartridge_get_file_name(int type);
+const char *cartridge_get_filename_by_type(int type);
 int cartridge_type_enabled(int type);
 
-/* save the (rom/ram)image of the give cart type to a file */
+/* save the primary (rom/ram)image of the give cart type to a file */
 int cartridge_save_image(int type, const char *filename);
 int cartridge_bin_save(int type, const char *filename);
 int cartridge_crt_save(int type, const char *filename);
@@ -110,6 +111,13 @@ int cartridge_can_flush_image(int crtid);
 
 /* returns 1 when cartridge (ROM) image can be saved */
 int cartridge_can_save_image(int crtid);
+
+/* save the secondary image of the give cart type to a file */
+int cartridge_save_secondary_image(int type, const char *filename);
+int cartridge_flush_secondary_image(int type);
+
+int cartridge_can_flush_secondary_image(int crtid);
+int cartridge_can_save_secondary_image(int crtid);
 
 /* load/write snapshot modules for attached cartridges */
 struct snapshot_s;

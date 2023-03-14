@@ -70,6 +70,7 @@
 #include "vicii-phi1.h"
 #include "vicii.h"
 #include "viciitypes.h"
+#include "z80.h"
 #include "z80mem.h"
 #include "video.h"
 
@@ -332,11 +333,8 @@ static uint16_t c128_mem_mmu_wrap_read(uint16_t address)
     uint16_t addr;
     int use_ram_only = 0;
 
-    /* Check if there is no translation that needs to be done */
-    if (c128_mem_mmu_page_0 == 0 && c128_mem_mmu_page_1 == 1 && c128_mem_mmu_page_0_bank == 0 && c128_mem_mmu_page_1_bank == 0) {
-        return 0x100;
     /* Make sure the internal cpu port is always used for address 0 and 1 */
-    } else if (address == 0 || address == 1) {
+    if (address == 0 || address == 1) {
         return 0x100;
     /* check if the address page is page 0 or page 1 and we are in c64 mode and page 0 and 1 are in shared memory, ifso replace with bank 0 */
     } else if ((addr_page == 0 || addr_page == 1) && in_c64_mode == 1 && c128_mem_mmu_zp_sp_shared) {
@@ -358,6 +356,9 @@ static uint16_t c128_mem_mmu_wrap_read(uint16_t address)
     } else if ((addr_page == 0 || addr_page == 1) && in_c64_mode == 1 && !c128_mem_mmu_zp_sp_shared) {
         addr_bank = c64_mode_bank;
         use_ram_only = 1;
+    /* Check if there is no translation that needs to be done */
+    } else if (c128_mem_mmu_page_0 == 0 && c128_mem_mmu_page_1 == 1 && c128_mem_mmu_page_0_bank == 0 && c128_mem_mmu_page_1_bank == 0) {
+        return 0x100;
     /* check if the address page is page 1 and in shared memory then bank does not change */
     } else if (c128_mem_mmu_zp_sp_shared && addr_page == 1) {
         addr_page = c128_mem_mmu_page_1;
@@ -1164,7 +1165,7 @@ void top_shared_store(uint16_t addr, uint8_t value)
     vicii.last_cpu_val = value;
 
     if (mem_dma_rw) {
-        vicii.last_cpu_val = dma_bank[addr];
+        dma_bank[addr] = value;
     } else if (c128_mem_mmu_wrap_store(addr, value)) {
         STORE_TOP_SHARED(addr, value);
     }
@@ -1182,6 +1183,118 @@ uint8_t colorram_read(uint16_t addr)
 {
     vicii.last_cpu_val = mem_color_ram_cpu[addr & 0x3ff] | (vicii_read_phi1() & 0xf0);
     return vicii.last_cpu_val;
+}
+
+/* ------------------------------------------------------------------------- */
+
+/* c64 mode vicii vbank wrappers, so that p0/p1 translation will work as well */
+
+static void c64mode_vicii_mem_vbank_39xx_lo_store(uint16_t adr, uint8_t val)
+{
+    vicii.last_cpu_val = val;
+
+    if (mem_dma_rw) {
+        dma_bank[adr] = val;
+    } else if (c128_mem_mmu_wrap_store(adr, val)) {
+        STORE_BOTTOM_SHARED(adr, val);
+        vicii_mem_vbank_39xx_store(adr, val);
+    }
+}
+
+static void c64mode_vicii_mem_vbank_3fxx_lo_store(uint16_t adr, uint8_t val)
+{
+    vicii.last_cpu_val = val;
+
+    if (mem_dma_rw) {
+        dma_bank[adr] = val;
+    } else if (c128_mem_mmu_wrap_store(adr, val)) {
+        STORE_BOTTOM_SHARED(adr, val);
+        vicii_mem_vbank_3fxx_store(adr, val);
+    }
+}
+
+static void c64mode_vicii_mem_vbank_lo_store(uint16_t adr, uint8_t val)
+{
+    vicii.last_cpu_val = val;
+
+    if (mem_dma_rw) {
+        dma_bank[adr] = val;
+    } else if (c128_mem_mmu_wrap_store(adr, val)) {
+        STORE_BOTTOM_SHARED(adr, val);
+        vicii_mem_vbank_store(adr, val);
+    }
+}
+
+static void c64mode_vicii_mem_vbank_39xx_ram_store(uint16_t adr, uint8_t val)
+{
+    vicii.last_cpu_val = val;
+
+    if (mem_dma_rw) {
+        dma_bank[adr] = val;
+    } else if (c128_mem_mmu_wrap_store(adr, val)) {
+        ram_bank[adr] = val;
+        vicii_mem_vbank_39xx_store(adr, val);
+    }
+}
+
+static void c64mode_vicii_mem_vbank_3fxx_ram_store(uint16_t adr, uint8_t val)
+{
+    vicii.last_cpu_val = val;
+
+    if (mem_dma_rw) {
+        dma_bank[adr] = val;
+    } else if (c128_mem_mmu_wrap_store(adr, val)) {
+        ram_bank[adr] = val;
+        vicii_mem_vbank_3fxx_store(adr, val);
+    }
+}
+
+static void c64mode_vicii_mem_vbank_ram_store(uint16_t adr, uint8_t val)
+{
+    vicii.last_cpu_val = val;
+
+    if (mem_dma_rw) {
+        dma_bank[adr] = val;
+    } else if (c128_mem_mmu_wrap_store(adr, val)) {
+        ram_bank[adr] = val;
+        vicii_mem_vbank_store(adr, val);
+    }
+}
+
+static void c64mode_vicii_mem_vbank_39xx_top_shared_store(uint16_t adr, uint8_t val)
+{
+    vicii.last_cpu_val = val;
+
+    if (mem_dma_rw) {
+        dma_bank[adr] = val;
+    } else if (c128_mem_mmu_wrap_store(adr, val)) {
+        STORE_TOP_SHARED(adr, val);
+        vicii_mem_vbank_39xx_store(adr, val);
+    }
+}
+
+static void c64mode_vicii_mem_vbank_3fxx_top_shared_store(uint16_t adr, uint8_t val)
+{
+    vicii.last_cpu_val = val;
+
+    if (mem_dma_rw) {
+        dma_bank[adr] = val;
+    } else if (c128_mem_mmu_wrap_store(adr, val)) {
+        STORE_TOP_SHARED(adr, val);
+        vicii_mem_vbank_3fxx_store(adr, val);
+    }
+}
+
+static void c64mode_vicii_mem_vbank_top_shared_store(uint16_t adr, uint8_t val)
+{
+    vicii.last_cpu_val = val;
+
+    if (mem_dma_rw) {
+        dma_bank[adr] = val;
+    } else if (c128_mem_mmu_wrap_store(adr, val)) {
+        STORE_TOP_SHARED(adr, val);
+        vicii_mem_vbank_store(adr, val);
+    }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1209,10 +1322,16 @@ static void c64mode_ffxx_store(uint16_t addr, uint8_t value)
 {
     vicii.last_cpu_val = value;
 
-    if (addr == 0xff00) {
-        reu_dma(-1);
+    if (mem_dma_rw) {
+        dma_bank[addr] = value;
+    } else if (vbank == 3) {
+        vicii_mem_vbank_3fxx_store(addr, value);
     } else {
         top_shared_store(addr, value);
+    }
+
+   if (addr == 0xff00) {
+        reu_dma(-1);
     }
 }
 
@@ -1248,7 +1367,20 @@ void mem_initialize_memory(void)
             mem_read_tab[128 + i][j] = lo_read;
             mem_read_base_tab[128 + i][j] = mem_ram;
             for (k = 0; k < NUM_VBANKS; k++) {
-                mem_write_tab[k][128 + i][j] = lo_store;
+                if ((j & 0xc0) == (k << 6)) {
+                    switch (j & 0x3f) {
+                        case 0x39:
+                            mem_write_tab[k][128 + i][j] = c64mode_vicii_mem_vbank_39xx_lo_store;
+                            break;
+                        case 0x3f:
+                            mem_write_tab[k][128 + i][j] = c64mode_vicii_mem_vbank_3fxx_lo_store;
+                            break;
+                        default:
+                            mem_write_tab[k][128 + i][j] = c64mode_vicii_mem_vbank_lo_store;
+                    }
+                } else {
+                    mem_write_tab[k][128 + i][j] = lo_store;
+                }
             }
         }
 
@@ -1257,7 +1389,20 @@ void mem_initialize_memory(void)
             mem_read_tab[128 + i][j] = ram_read;
             mem_read_base_tab[128 + i][j] = mem_ram;
             for (k = 0; k < NUM_VBANKS; k++) {
-                mem_write_tab[k][128 + i][j] = ram_store;
+                if ((j & 0xc0) == (k << 6)) {
+                    switch (j & 0x3f) {
+                        case 0x39:
+                            mem_write_tab[k][128 + i][j] = c64mode_vicii_mem_vbank_39xx_ram_store;
+                            break;
+                        case 0x3f:
+                            mem_write_tab[k][128 + i][j] = c64mode_vicii_mem_vbank_3fxx_ram_store;
+                            break;
+                        default:
+                            mem_write_tab[k][128 + i][j] = c64mode_vicii_mem_vbank_ram_store;
+                    }
+                } else {
+                    mem_write_tab[k][128 + i][j] = ram_store;
+                }
             }
         }
 
@@ -1265,7 +1410,20 @@ void mem_initialize_memory(void)
             mem_read_tab[128 + i][j] = top_shared_read;
             mem_read_base_tab[128 + i][j] = mem_ram;
             for (k = 0; k < NUM_VBANKS; k++) {
-                mem_write_tab[k][128 + i][j] = top_shared_store;
+                if ((j & 0xc0) == (k << 6)) {
+                    switch (j & 0x3f) {
+                        case 0x39:
+                            mem_write_tab[k][128 + i][j] = c64mode_vicii_mem_vbank_39xx_top_shared_store;
+                            break;
+                        case 0x3f:
+                            mem_write_tab[k][128 + i][j] = c64mode_vicii_mem_vbank_3fxx_top_shared_store;
+                            break;
+                        default:
+                            mem_write_tab[k][128 + i][j] = c64mode_vicii_mem_vbank_top_shared_store;
+                    }
+                } else {
+                    mem_write_tab[k][128 + i][j] = top_shared_store;
+                }
             }
         }
         mem_read_tab[128 + i][0xff] = top_shared_read;
@@ -1485,6 +1643,9 @@ void mem_initialize_go64_memory_bank(uint8_t shared_mem)
 void mem_powerup(void)
 {
     ram_init(mem_ram, C128_RAM_SIZE);
+
+    vicii_init_colorram(mem_color_ram);
+    vicii_init_colorram(mem_color_ram + 0x400);
 }
 
 /* ------------------------------------------------------------------------- */

@@ -300,6 +300,7 @@ static int set_gmod2_eeprom_filename(const char *name, void *param)
 static int set_gmod2_eeprom_rw(int val, void* param)
 {
     gmod2_eeprom_rw = val ? 1 : 0;
+    m93c86_set_image_rw(gmod2_eeprom_rw);
     return 0;
 }
 
@@ -487,6 +488,19 @@ int gmod2_flush_image(void)
         return gmod2_crt_save(gmod2_filename);
     }
     return -1;
+}
+
+int gmod2_can_save_eeprom(void)
+{
+    return 1;
+}
+
+int gmod2_can_flush_eeprom(void)
+{
+    if ((gmod2_eeprom_filename != NULL) && (*gmod2_eeprom_filename != 0)) {
+        return 1;
+    }
+    return 0;
 }
 
 /** \brief  Save a copy of the GMod2 EEPROM image to a file

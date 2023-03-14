@@ -42,6 +42,14 @@
 #include "types.h"
 #include "lib.h"
 
+/* #define DEBUG_PRINTER */
+
+#ifdef DEBUG_PRINTER
+#define DBG(x)  log_debug x
+#else
+#define DBG(x)
+#endif
+
 /* MAX_COL must be a multiple of 32 */
 /* 2432 x 3172 */
 #define BORDERX 16
@@ -406,6 +414,10 @@ static void formfeed(nl10_t *nl10, unsigned int prnr)
 }
 
 
+#define valid_xpos(X)   ((X) >= 0 && (X) < MAX_COL)
+#define valid_ypos(Y)   ((Y) >= 0 && (Y) < BUF_ROW)
+#define valid_pos(X, Y) (valid_xpos(X) && valid_ypos(Y))
+
 inline static void draw_point2(nl10_t *nl10, int x, int y)
 {
 /*
@@ -414,20 +426,22 @@ inline static void draw_point2(nl10_t *nl10, int x, int y)
    **
 */
 
-    nl10->line[y][x] = 1;
-    if (x < MAX_COL - 1) {
+    if (valid_pos(x, y)) {
+        nl10->line[y][x] = 1;
+    }
+    if (valid_pos(x + 1, y)) {
         nl10->line[y][x + 1] = 1;
     }
-    if (y < BUF_ROW - 1) {
+    if (valid_pos(x, y + 1)) {
         nl10->line[y + 1][x] = 1;
     }
-    if (y > 0) {
+    if (valid_pos(x, y - 1)) {
         nl10->line[y - 1][x] = 1;
     }
-    if ((y < BUF_ROW - 1) && (x < MAX_COL - 1)) {
+    if (valid_pos(x + 1, y + 1)) {
         nl10->line[y + 1][x + 1] = 1;
     }
-    if ((y > 0) && (x < MAX_COL - 1)) {
+    if (valid_pos(x + 1, y - 1)) {
         nl10->line[y - 1][x + 1] = 1;
     }
 }
@@ -440,20 +454,19 @@ inline static void draw_point3(nl10_t *nl10, int x, int y)
     *
 */
 
-    if ((x < 0) || (x >= MAX_COL) || (y < 0) || (y >= BUF_ROW)) {
-        return;
+    if (valid_pos(x, y)) {
+        nl10->line[y][x] = 1;
     }
-    nl10->line[y][x] = 1;
-    if (x > 0) {
+    if (valid_pos(x - 1, y)) {
         nl10->line[y][x - 1] = 1;
     }
-    if (x < MAX_COL - 1) {
+    if (valid_pos(x + 1, y)) {
         nl10->line[y][x + 1] = 1;
     }
-    if (y > 0) {
+    if (valid_pos(x, y - 1)) {
         nl10->line[y - 1][x] = 1;
     }
-    if (y < BUF_ROW - 1) {
+    if (valid_pos(x, y + 1)) {
         nl10->line[y + 1][x] = 1;
     }
 }
@@ -1970,11 +1983,13 @@ static int drv_nl10_getc(unsigned int prnr, unsigned int secondary, uint8_t *b)
 
 static int drv_nl10_flush(unsigned int prnr, unsigned int secondary)
 {
+    DBG(("drv_nl10_flush:%d\n", prnr));
     return 0;
 }
 
 static int drv_nl10_formfeed(unsigned int prnr)
 {
+    DBG(("drv_nl10_formfeed:%d\n", prnr));
     nl10_t *nl10 = &(drv_nl10[prnr]);
     if (nl10->isopen) {
         formfeed(nl10, prnr);

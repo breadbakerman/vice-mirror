@@ -30,13 +30,23 @@
 
 #include <gtk/gtk.h>
 
-GtkWidget *cart_image_widget_create(GtkWidget  *parent,
-                                    const char *title,
+GtkWidget *cart_image_widget_create(const char *title,
                                     const char *resource_fname,
                                     const char *resource_write,
                                     const char *cart_name,
                                     int         cart_id);
 
 void cart_image_widget_shutdown(void);
+
+GtkWidget *cart_secondary_image_widget_create(const char *image_name,
+                                              const char *resource,
+                                              const char *cart_name,
+                                              int         cart_id);
+void       cart_secondary_image_widget_append_check(const char *resource,
+                                                    const char *text);
+
+
+
+
 
 #endif

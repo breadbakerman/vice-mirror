@@ -346,16 +346,32 @@ int cartridge_get_id(int slot)
     return type;
 }
 
-/* FIXME: terrible name, we already have cartridge_get_file_name */
-char *cartridge_get_filename(int slot)
+/* FIXME: slot arg is ignored right now.
+   this should return a pointer to a filename, or NULL
+*/
+char *cartridge_get_filename_by_slot(int slot)
 {
-    DBG(("cartridge_get_filename(slot:%d)\n", slot));
-/*    return cart_get_file_name(mem_cartridge_type); */
+    DBG(("cartridge_get_filename_by_slot(slot:%d)\n", slot));
+/*    return cart_get_filename_by_type(mem_cartridge_type); */
     int type = cart_getid_slotmain();
-    if (cart_getid_slotmain() == type && !cart_can_get_file_name(type)) {
+    if (cart_getid_slotmain() == type) {
         return cartfile;
     }
-    return (char*)cart_get_file_name(type);
+    log_error(LOG_DEFAULT, "FIXME: cartridge_get_filename_by_slot only works with main-slot");
+    return NULL;
+#if 0
+    /* FIXME: this can not work right! */
+    return (char*)cart_get_filename_by_type(type);
+#endif
+}
+
+/* FIXME: slot arg is ignored right now.
+   this should return a pointer to a filename, or NULL
+*/
+char *cartridge_get_secondary_filename_by_slot(int slot)
+{
+    log_error(LOG_DEFAULT, "FIXME: cartridge_get_secondary_filename_by_slot not implemented yet");
+    return NULL;
 }
 
 /*
@@ -366,7 +382,7 @@ char *cartridge_get_filename(int slot)
     - cartridge change reset behaviour
 
     the following functions try to deal with this in a hopefully sane way... however,
-    do _NOT_ change the used resources from the (G)UI directly. (used the set_default
+    do _NOT_ change the used resources from the (G)UI directly. (use the set_default
     function instead)
 */
 
@@ -653,12 +669,12 @@ int cart_getid_slotmain(void)
 /*
     get filename of cart with given type
 */
-const char *cartridge_get_file_name(int type)
+const char *cartridge_get_filename_by_type(int type)
 {
-    if (cart_getid_slotmain() == type && !cart_can_get_file_name(type)) {
+    if (cart_getid_slotmain() == type) {
         return cartfile;
     }
-    return cart_get_file_name(type);
+    return cart_get_filename_by_type(type);
 }
 
 /*
@@ -1352,27 +1368,4 @@ void cartridge_init(void)
     cartridge_nmi_alarm = alarm_new(maincpu_alarm_context, "Cartridge", cart_nmi_alarm_triggered, NULL);
     cartridge_freeze_alarm = alarm_new(maincpu_alarm_context, "Cartridge", cart_freeze_alarm_triggered, NULL);
     cartridge_int_num = interrupt_cpu_status_int_new(maincpu_int_status, "Cartridge");
-}
-
-/* returns 1 when cartridge (ROM) image can be flushed */
-int cartridge_can_flush_image(int crtid)
-{
-    const char *p;
-    if (!cartridge_type_enabled(crtid)) {
-        return 0;
-    }
-    p = cartridge_get_file_name(crtid);
-    if ((p == NULL) || (*p == '\x0')) {
-        return 0;
-    }
-    return 1;
-}
-
-/* returns 1 when cartridge (ROM) image can be saved */
-int cartridge_can_save_image(int crtid)
-{
-    if (!cartridge_type_enabled(crtid)) {
-        return 0;
-    }
-    return 1;
 }
