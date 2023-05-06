@@ -249,6 +249,7 @@ noinst_HEADERS = \
 	romset.h \
 	scpu64ui.h \
 	screenshot.h \
+	sha1.h \
 	snapshot.h \
 	serial.h \
 	sidcart.h \
@@ -329,6 +330,7 @@ base_sources = \
 	resources.c \
 	romset.c \
 	screenshot.c \
+	sha1.c \
 	snapshot.c \
 	socket.c \
 	sound.c \
@@ -772,6 +774,14 @@ x64sc-program: \
 	$(BUILT_SOURCES) \
 	@RESID_DEP@ \
 	x64sc$(EXEEXT)
+
+if SUPPORT_X64
+else
+# symlink x64 -> x64sc
+install-exec-hook:
+	cd $(DESTDIR)$(bindir) && $(RM) x64$(EXEEXT)
+	cd $(DESTDIR)$(bindir) && $(LN_S) x64sc$(EXEEXT) x64$(EXEEXT)
+endif
 
 # x64dtv
 x64dtv_libs =  \

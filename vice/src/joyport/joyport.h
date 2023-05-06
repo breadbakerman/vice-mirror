@@ -74,6 +74,9 @@ enum {
     JOYPORT_ID_PROTOPAD,
     JOYPORT_ID_IO_SIMULATION,
     JOYPORT_ID_MF_JOYSTICK,
+    JOYPORT_ID_PAPERCLIP64E,
+    JOYPORT_ID_PAPERCLIP64SC,
+    JOYPORT_ID_PAPERCLIP2,
 
     /* This item always needs to be at the end */
     JOYPORT_MAX_DEVICES
@@ -92,17 +95,18 @@ enum {
     JOYPORT_3,       /**< c64/c128/c64dtv/scpu64/cbm2/pet/plus4/vic20 userport, joystick adapter port 1 */
     JOYPORT_4,       /**< c64/c128/scpu64/cbm2/pet/plus4/vic20 userport, joystick adapter port 2 */
     JOYPORT_5,       /**< c64/c128/scpu64/cbm2/pet/plus4/vic20 userport, joystick adapter port 3 */
-    JOYPORT_6,       /**< plus4 sidcart control port */
+    JOYPORT_6,
     JOYPORT_7,
     JOYPORT_8,
     JOYPORT_9,
     JOYPORT_10,
+    JOYPORT_11,      /**< plus4 sidcart control port */
 
     /* This item always needs to be at the end */
     JOYPORT_MAX_PORTS
 };
 
-#define JOYPORT_PLUS4_SIDCART JOYPORT_6
+#define JOYPORT_PLUS4_SIDCART JOYPORT_11
 
 #define JOYPORT_IS_NOT_LIGHTPEN   0
 #define JOYPORT_IS_LIGHTPEN       1
@@ -118,8 +122,7 @@ enum {
     JOYSTICK_ADAPTER_ID_USERPORT_SUPERPAD64,
     JOYSTICK_ADAPTER_ID_SPACEBALLS,
     JOYSTICK_ADAPTER_ID_MULTIJOY,
-    JOYSTICK_ADAPTER_ID_INCEPTION,
-    JOYSTICK_ADAPTER_ID_SPT_JOYSTICK
+    JOYSTICK_ADAPTER_ID_INCEPTION
 };
 
 enum {

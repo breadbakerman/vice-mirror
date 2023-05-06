@@ -37,7 +37,7 @@
 #include "log.h"
 #include "dynlib.h"
 
-#define DEBUG_OPENCBM
+/* #define DEBUG_OPENCBM */
 
 #ifdef DEBUG_OPENCBM
 #define LOG(x)  log_debug x
@@ -76,6 +76,9 @@ static void opencbmlib_free_library(void)
 
 static int opencbmlib_load_library(opencbmlib_t *opencbmlib)
 {
+    /* work around odd problem(s) when loading the dll on windows */
+    archdep_opencbm_fix_dll_path();
+
     LOG(("opencbmlib_load_library opencbmlib_t:%p", (void*)opencbmlib));
     if (opencbm_so == NULL) {
         opencbm_so = vice_dynlib_open(ARCHDEP_OPENCBM_SO_NAME);

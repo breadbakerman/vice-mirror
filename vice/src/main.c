@@ -244,8 +244,9 @@ int main_program(int argc, char **argv)
     /* Initialize system file locator.  */
     sysfile_init(machine_name);
 
-
-    if ((init_resources() < 0) || (init_cmdline_options() < 0)) {
+    /* generic init, first resources, then cmdline options that use them */
+    if ((init_resources() < 0) ||
+        (init_cmdline_options() < 0)) {
         return -1;
     }
 
@@ -391,8 +392,6 @@ int main_program(int argc, char **argv)
         return -1;
     }
 
-    initcmdline_check_attach();
-
 #ifdef USE_VICE_THREAD
 
     if (pthread_create(&vice_thread, NULL, vice_thread_main, NULL)) {
@@ -430,6 +429,7 @@ void vice_thread_shutdown(void)
         return;
     }
 
+    log_message(LOG_DEFAULT, "\nConfigure Flags:\n%s", CONFIGURE_FLAGS);
     /* log resources with non default values */
     resources_log_active();
     /* log the active config as commandline options */

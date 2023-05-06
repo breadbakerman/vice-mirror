@@ -568,6 +568,7 @@ if (olda != addr || olds != data) { \
 #else
 #define storedebug()
 #endif
+    ctxptr->cpu->cpu_last_data = data;
     /* Decode bits 15-12 */
     switch ( (addr >> 12) & 15 ) {
     case 0x4:
@@ -665,9 +666,9 @@ uint8_t cmdhd_read(diskunit_context_t *ctxptr, uint16_t addr)
         /* Since the ROM wants to read/write from the RAM from 0xC000-0xFFFF,
             when 0x8802.1 = 0, RAM from 0xC000-0xFFFF maps to 0x4000-0x7FFF */
         if (ctxptr->cmdhd->i8255a_o[2]&2) {
-            return drive_read_ram(ctxptr, (addr & 0x3fff) | 0x4000 );
+            return ctxptr->cpu->cpu_last_data = drive_read_ram(ctxptr, (addr & 0x3fff) | 0x4000 );
         } else {
-            return drive_read_ram(ctxptr, (addr & 0x3fff) | 0xC000 );
+            return ctxptr->cpu->cpu_last_data = drive_read_ram(ctxptr, (addr & 0x3fff) | 0xC000 );
         }
         break;
     case 0x8:
@@ -677,35 +678,35 @@ uint8_t cmdhd_read(diskunit_context_t *ctxptr, uint16_t addr)
         case 0x1: /* 0x81xx U10 */
             data = viacore_read(ctxptr->cmdhd->via10, addr & 15);
             readdebug()
-            return data;
+            return ctxptr->cpu->cpu_last_data = data;
             break;
         case 0x4: /* 0x84xx U9 */
         case 0x5: /* 0x85xx U9 */
             data = viacore_read(ctxptr->cmdhd->via9, addr & 15);
             readdebug()
-            return data;
+            return ctxptr->cpu->cpu_last_data = data;
             break;
         case 0x8: /* 0x88xx U11 */
         case 0x9: /* 0x89xx U11 */
             data = i8255a_read(ctxptr->cmdhd->i8255a, addr & 3);
             readdebug()
-            return data;
+            return ctxptr->cpu->cpu_last_data = data;
             break;
         case 0xc: /* 0x8cxx */
         case 0xd: /* 0x8dxx */
             data = rtc72421_read(ctxptr->cmdhd->rtc, addr & 15);
             readdebug()
-            return data;
+            return ctxptr->cpu->cpu_last_data = data;
             break;
         default:
-            return drive_read_ram(ctxptr, addr);
+            return ctxptr->cpu->cpu_last_data = drive_read_ram(ctxptr, addr);
             break;
         }
         break;
     case 0x9:
     case 0xa:
     case 0xb:
-        return drive_read_ram(ctxptr, addr);
+        return ctxptr->cpu->cpu_last_data = drive_read_ram(ctxptr, addr);
         break;
     case 0xc:
     case 0xd:
@@ -713,9 +714,9 @@ uint8_t cmdhd_read(diskunit_context_t *ctxptr, uint16_t addr)
     case 0xf:
         /* ROM is enabled when 0x8802.0 is 1, else RAM */
         if (ctxptr->cmdhd->i8255a_o[2]&1) {
-            return drive_read_rom(ctxptr, addr & 0x3fff );
+            return ctxptr->cpu->cpu_last_data = drive_read_rom(ctxptr, addr & 0x3fff );
         } else {
-            return drive_read_ram(ctxptr, addr);
+            return ctxptr->cpu->cpu_last_data = drive_read_ram(ctxptr, addr);
         }
         break;
     }
@@ -1392,7 +1393,7 @@ int cmdhd_attach_image(disk_image_t *image, unsigned int unit)
             /* skip first disk as it has a DHD extension */
             for (j = (i == 0); j < 8; j++) {
                /* generate the name */
-               testname = lib_msprintf("%s%" PRI_SIZE_T" %1" PRI_SIZE_T,
+               testname = lib_msprintf("%s%" PRI_SIZE_T "%1" PRI_SIZE_T,
                                        basename, i, j);
                /* open the file */
                test = fopen(testname, "rb+");

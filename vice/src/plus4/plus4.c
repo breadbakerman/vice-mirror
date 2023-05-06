@@ -107,8 +107,12 @@
 #include "types.h"
 #include "userport.h"
 #include "userport_dac.h"
+#include "userport_hummer_joystick.h"
 #include "userport_io_sim.h"
 #include "userport_joystick.h"
+#include "userport_spt_joystick.h"
+#include "userport_synergy_joystick.h"
+#include "userport_woj_joystick.h"
 #include "vice-event.h"
 #include "video.h"
 #include "video-sound.h"
@@ -346,6 +350,56 @@ static joyport_port_props_t joy_adapter_control_port_3 =
     0                   /* port can be switched on/off */
 };
 
+static joyport_port_props_t joy_adapter_control_port_4 =
+{
+    "Joystick adapter port 4",
+    0,                  /* has NO potentiometer connected to this port */
+    0,                  /* has NO lightpen support on this port */
+    0,                  /* has NO joystick adapter on this port */
+    0,                  /* has NO output support on this port */
+    0                   /* port can be switched on/off */
+};
+
+static joyport_port_props_t joy_adapter_control_port_5 =
+{
+    "Joystick adapter port 5",
+    0,                  /* has NO potentiometer connected to this port */
+    0,                  /* has NO lightpen support on this port */
+    0,                  /* has NO joystick adapter on this port */
+    0,                  /* has NO output support on this port */
+    0                   /* port can be switched on/off */
+};
+
+static joyport_port_props_t joy_adapter_control_port_6 =
+{
+    "Joystick adapter port 6",
+    0,                  /* has NO potentiometer connected to this port */
+    0,                  /* has NO lightpen support on this port */
+    0,                  /* has NO joystick adapter on this port */
+    0,                  /* has NO output support on this port */
+    0                   /* port can be switched on/off */
+};
+
+static joyport_port_props_t joy_adapter_control_port_7 =
+{
+    "Joystick adapter port 7",
+    0,                  /* has NO potentiometer connected to this port */
+    0,                  /* has NO lightpen support on this port */
+    0,                  /* has NO joystick adapter on this port */
+    0,                  /* has NO output support on this port */
+    0                   /* port can be switched on/off */
+};
+
+static joyport_port_props_t joy_adapter_control_port_8 =
+{
+    "Joystick adapter port 8",
+    0,                  /* has NO potentiometer connected to this port */
+    0,                  /* has NO lightpen support on this port */
+    0,                  /* has NO joystick adapter on this port */
+    0,                  /* has NO output support on this port */
+    0                   /* port can be switched on/off */
+};
+
 static joyport_port_props_t sidcard_port =
 {
     "SIDCard control port",
@@ -373,7 +427,22 @@ static int init_joyport_ports(void)
     if (joyport_port_register(JOYPORT_5, &joy_adapter_control_port_3) < 0) {
         return -1;
     }
-    return joyport_port_register(JOYPORT_6, &sidcard_port);
+    if (joyport_port_register(JOYPORT_6, &joy_adapter_control_port_4) < 0) {
+        return -1;
+    }
+    if (joyport_port_register(JOYPORT_7, &joy_adapter_control_port_5) < 0) {
+        return -1;
+    }
+    if (joyport_port_register(JOYPORT_8, &joy_adapter_control_port_6) < 0) {
+        return -1;
+    }
+    if (joyport_port_register(JOYPORT_9, &joy_adapter_control_port_7) < 0) {
+        return -1;
+    }
+    if (joyport_port_register(JOYPORT_10, &joy_adapter_control_port_8) < 0) {
+        return -1;
+    }
+    return joyport_port_register(JOYPORT_PLUS4_SIDCART, &sidcard_port);
 }
 
 /* Plus4-specific resource initialization.  This is called before initializing
@@ -507,8 +576,16 @@ int machine_resources_init(void)
         init_resource_fail("userport oem joystick");
         return -1;
     }
+    if (userport_spt_joystick_resources_init() < 0) {
+        init_resource_fail("userport spt joystick");
+        return -1;
+    }
     if (userport_joystick_synergy_resources_init() < 0) {
         init_resource_fail("userport synergy joystick");
+        return -1;
+    }
+    if (userport_joystick_woj_resources_init() < 0) {
+        init_resource_fail("userport woj joystick");
         return -1;
     }
     if (userport_dac_resources_init() < 0) {

@@ -146,6 +146,7 @@ if test x"$CROSS" != "xtrue"; then
     cp $UNZIPBIN $BINDIST_DIR
     cp `ntldd -R $UNZIPBIN | gawk '/\\\\bin\\\\/{print $3;}' | cygpath -f -` $BINDIST_DIR
   fi
+
 else
   # Assume a cross-builder for Windows here.
   get_dll_deps()

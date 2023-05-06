@@ -85,6 +85,9 @@
 #include "network.h"
 #include "ninja_snespad.h"
 #include "paperclip64.h"
+#include "paperclip64e.h"
+#include "paperclip64sc.h"
+#include "paperclip2.h"
 #include "parallel.h"
 #include "printer.h"
 #include "protopad.h"
@@ -118,6 +121,8 @@
 #include "userport_8bss.h"
 #include "userport_dac.h"
 #include "userport_digimax.h"
+#include "userport_hks_joystick.h"
+#include "userport_hummer_joystick.h"
 #include "userport_io_sim.h"
 #include "userport_joystick.h"
 #include "userport_petscii_snespad.h"
@@ -125,7 +130,9 @@
 #include "userport_rtc_ds1307.h"
 #include "userport_spt_joystick.h"
 #include "userport_superpad64.h"
+#include "userport_synergy_joystick.h"
 #include "userport_wic64.h"
+#include "userport_woj_joystick.h"
 #include "vice-event.h"
 #include "vicii.h"
 #include "vicii-mem.h"
@@ -565,6 +572,18 @@ int machine_resources_init(void)
         init_resource_fail("joyport paperclip64 dongle");
         return -1;
     }
+    if (joyport_paperclip64e_resources_init() < 0) {
+        init_resource_fail("joyport paperclip64e dongle");
+        return -1;
+    }
+    if (joyport_paperclip64sc_resources_init() < 0) {
+        init_resource_fail("joyport paperclip64sc dongle");
+        return -1;
+    }
+    if (joyport_paperclip2_resources_init() < 0) {
+        init_resource_fail("joyport paperclip2 dongle");
+        return -1;
+    }
     if (joyport_coplin_keypad_resources_init() < 0) {
         init_resource_fail("joyport coplin keypad");
         return -1;
@@ -712,6 +731,10 @@ int machine_resources_init(void)
     }
     if (userport_joystick_synergy_resources_init() < 0) {
         init_resource_fail("userport synergy joystick");
+        return -1;
+    }
+    if (userport_joystick_woj_resources_init() < 0) {
+        init_resource_fail("userport woj joystick");
         return -1;
     }
     if (userport_spt_joystick_resources_init() < 0) {

@@ -29,6 +29,7 @@ AC_INIT([vice], [vice_version])
 dnl We save the command line options here since AM_INIT_AUTOMAKE and other
 dnl macros clobber $@:
 cmdline_options="$@"
+AC_DEFINE_UNQUOTED([CONFIGURE_FLAGS], ["$cmdline_options"],[Flags passed to configure])
 AC_CONFIG_SRCDIR([src/maincpu.c])
 AM_INIT_AUTOMAKE([-Wno-portability foreign])
 
@@ -84,21 +85,21 @@ dnl
 VICE_ARG_WITH_LIST(alsa,                [  --without-alsa          do not use the ALSA sound system])
 VICE_ARG_WITH_LIST(fastsid,             [  --with-fastsid          use the FastSID engine])
 VICE_ARG_WITH_LIST(flac,                [  --with-flac             use FLAC support])
-VICE_ARG_WITH_LIST(mpg123,              [  --with-mpg123           use MPG123 support])
+VICE_ARG_WITH_LIST(mpg123,              [  --with-mpg123           use MPG123 for MP3 decoding])
 VICE_ARG_WITH_LIST(oss,                 [  --with-oss              use the OSS sound system])
 VICE_ARG_WITH_LIST(pulse,               [  --without-pulse         do not use PulseAudio sound system])
 VICE_ARG_WITH_LIST(resid,               [  --without-resid         do not use the reSID engine])
 VICE_ARG_WITH_LIST(sdlsound,            [  --with-sdlsound         use SDL sound system])
 VICE_ARG_WITH_LIST(sun,                 [  --without-sun           do not use the sun/netbsd sound system])
 VICE_ARG_WITH_LIST(vorbis,              [  --with-vorbis           use Ogg/Vorbis support])
+VICE_ARG_WITH_LIST(lame,                [  --with-lame             use LAME for MP3 encoding])
+VICE_ARG_WITH_LIST(static-lame,         [  --with-static-lame      statically link LAME MP3])
 VICE_ARG_ENABLE_LIST(catweasel,         [  --enable-catweasel      enables CatWeasel (PCI/Zorro/Clockport SID card) support])
 VICE_ARG_ENABLE_LIST(hardsid,           [  --disable-hardsid       disables HardSID support])
-VICE_ARG_ENABLE_LIST(lame,              [  --enable-lame           Enable MP3 export with LAME])
 VICE_ARG_ENABLE_LIST(midi,              [  --enable-midi           enable MIDI support])
 VICE_ARG_ENABLE_LIST(new8580filter,     [  --disable-new8580filter disable new 8580 filters])
 VICE_ARG_ENABLE_LIST(parsid,            [  --enable-parsid         enables ParSID support])
 VICE_ARG_ENABLE_LIST(portaudio,         [  --disable-portaudio     disables PortAudio support])
-VICE_ARG_ENABLE_LIST(static-lame,       [  --enable-static-lame    enable static LAME linking])
 
 
 dnl
@@ -161,7 +162,7 @@ dnl
 dnl Documentation options
 dnl
 VICE_ARG_ENABLE_LIST(html-docs,         [  --disable-html-docs     do not generate the HTML documentation [[default=no]]])
-VICE_ARG_ENABLE_LIST(pdf-docs,          [  --enable-pdf-docs       generate the PDF documentation [[default=if possible]]])
+VICE_ARG_ENABLE_LIST(pdf-docs,          [  --enable-pdf-docs       generate the PDF documentation [[default=no]]])
 VICE_ARG_ENABLE_LIST(platformdox,       [  --enable-platformdox    enable generating of documentation specific to the current host])
 
 
@@ -370,7 +371,7 @@ AS_IF([test x"$XA" = "xno"],
                   distribution or build and install it using the latest source
                   from https://www.floodgap.com/retrotech/xa/])])
 
-if test x"$enable_pdf_docs" != xno; then
+if test x"$enable_pdf_docs" = xyes; then
   AC_CHECK_PROGS(TEXI2DVI, texi2dvi, no)
   if test x"$TEXI2DVI" = "xno"; then
     AC_MSG_ERROR([PDF docs were requested (--enable-pdf-docs), but texi2dvi is missing])
@@ -388,8 +389,8 @@ if test x"${enable_html_docs:-yes}" != xno -a x"$PERL" = x; then
   AC_MSG_ERROR([Perl is required to generate the HTML documentation])]
 fi
 
-AM_CONDITIONAL([ENABLE_PDF_DOCS], [test x"${enable_pdf_docs}" != xno])
-if test x"${enable_pdf_docs}" != "xno"; then
+AM_CONDITIONAL([ENABLE_PDF_DOCS], [test x"$enable_pdf_docs" = xyes])
+if test x"$enable_pdf_docs" = xyes; then
     VICE_PDF_FILE_NAME="vice.pdf"
 else
     VICE_PDF_FILE_NAME=""
@@ -2637,7 +2638,7 @@ fi
 
 dnl --- Lame ---
 
-if test x"$enable_lame" = "xyes" ; then
+if test x"$with_lame" = "xyes" ; then
 
   old_CFLAGS="$CFLAGS"
   CFLAGS="$VICE_CFLAGS"
@@ -2647,10 +2648,10 @@ if test x"$enable_lame" = "xyes" ; then
   dnl the header is available!
   if test x"$ac_cv_header_lame_lame_h" = "xyes" ; then
     AC_MSG_CHECKING([for lame lib linking])
-    if test x"$dynlib_support" = "xyes" -a x"$enable_static_lame" != "xyes" ; then
+    if test x"$dynlib_support" = "xyes" -a x"$with_static_lame" != "xyes" ; then
       dnl dynlib linking
       SOUND_DRIVERS="$SOUND_DRIVERS soundmp3.o lamelib.o"
-      AC_DEFINE(USE_LAMEMP3,,[Enable lamemp3 support.])
+      AC_DEFINE(USE_LAMEMP3,,[Use lame for MP3 encoding.])
       USE_LAMEMP3_SUPPORT="yes"
       AC_DEFINE(HAVE_EXTERNAL_LAME,,[External linking for lame libs])
       AC_MSG_RESULT([dynlib])
@@ -2668,11 +2669,11 @@ if test x"$enable_lame" = "xyes" ; then
         if test "$ADD_MPGDECODER" = "1" ; then
           SOUND_LIBS="$SOUND_LIBS -lmpgdecoder";
         fi
-        AC_DEFINE(USE_LAMEMP3,,[Enable lamemp3 support.])
+        AC_DEFINE(USE_LAMEMP3,,[Use lame for MP3 encoding.])
         USE_LAMEMP3_SUPPORT="yes"
         AC_DEFINE(HAVE_STATIC_LAME,,[Static linking for lame libs])
       fi
-      if test x"$USE_LAMEMP3_SUPPORT" != "xyes" -a x"$enable_lame" = "xyes"; then
+      if test x"$USE_LAMEMP3_SUPPORT" != "xyes" -a x"$with_lame" = "xyes"; then
         AC_MSG_ERROR([lame mp3 support is missing])
       fi
     fi
@@ -3748,7 +3749,7 @@ fi
 
 echo "PCI utils support            : $HAVE_PCIUTILS_SUPPORT"
 
-echo "MP3 encoding support         : $USE_LAMEMP3_SUPPORT (--enable/disable-lame)"
+echo "MP3 encoding support         : $USE_LAMEMP3_SUPPORT (--with/without-lame)"
 echo "MP3 decoding support         : $USE_MPG123_SUPPORT (--with/without-mpg123)"
 echo "FLAC en/de-coding support    : $USE_FLAC_SUPPORT (--with/without-flac)"
 echo "Vorbis en/de-coding support  : $USE_VORBIS_SUPPORT (--with/without-vorbis)"
@@ -3855,23 +3856,20 @@ fi
 echo ""
 echo "DOCUMENTATION"
 echo "-------------"
-echo -n "Generate Info/text: "
 if test x"$MAKEINFO" = "x:"; then
-    echo "no (install texinfo)"
+    echo "Generate Info/text: no (install texinfo)"
 else
-    echo "yes"
+    echo "Generate Info/text: yes"
 fi
-echo -n "Generate PDF      : "
-if test x"$enable_pdf_docs" = xno; then
-    echo "no (install texinfo)"
+if test x"$enable_pdf_docs" = xyes; then
+    echo "Generate PDF      : yes"
 else
-    echo "yes"
+    echo "Generate PDF      : no"
 fi
-echo -n "Generate HTML     : "
 if test x"${enable_html_docs:-yes}" != xno; then
-    echo "yes"
+    echo "Generate HTML     : yes"
 else
-    echo "no"
+    echo "Generate HTML     : no"
 fi
 
 echo ""

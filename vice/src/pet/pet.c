@@ -102,12 +102,15 @@
 #include "types.h"
 #include "userport.h"
 #include "userport_dac.h"
+#include "userport_hummer_joystick.h"
 #include "userport_io_sim.h"
 #include "userport_joystick.h"
 #include "userport_petscii_snespad.h"
 #include "userport_rtc_58321a.h"
 #include "userport_rtc_ds1307.h"
 #include "userport_spt_joystick.h"
+#include "userport_synergy_joystick.h"
+#include "userport_woj_joystick.h"
 #include "util.h"
 #include "via.h"
 #include "vice-event.h"
@@ -208,6 +211,56 @@ static joyport_port_props_t joy_adapter_control_port_3 =
     0                       /* port can be switched on/off */
 };
 
+static joyport_port_props_t joy_adapter_control_port_4 =
+{
+    "Joystick adapter port 4",
+    0,                      /* has NO potentiometer connected to this port */
+    0,                      /* has NO lightpen support on this port */
+    0,                      /* has NO joystick adapter on this port */
+    1,                      /* has output support on this port */
+    0                       /* port can be switched on/off */
+};
+
+static joyport_port_props_t joy_adapter_control_port_5 =
+{
+    "Joystick adapter port 5",
+    0,                      /* has NO potentiometer connected to this port */
+    0,                      /* has NO lightpen support on this port */
+    0,                      /* has NO joystick adapter on this port */
+    1,                      /* has output support on this port */
+    0                       /* port can be switched on/off */
+};
+
+static joyport_port_props_t joy_adapter_control_port_6 =
+{
+    "Joystick adapter port 6",
+    0,                      /* has NO potentiometer connected to this port */
+    0,                      /* has NO lightpen support on this port */
+    0,                      /* has NO joystick adapter on this port */
+    1,                      /* has output support on this port */
+    0                       /* port can be switched on/off */
+};
+
+static joyport_port_props_t joy_adapter_control_port_7 =
+{
+    "Joystick adapter port 7",
+    0,                      /* has NO potentiometer connected to this port */
+    0,                      /* has NO lightpen support on this port */
+    0,                      /* has NO joystick adapter on this port */
+    1,                      /* has output support on this port */
+    0                       /* port can be switched on/off */
+};
+
+static joyport_port_props_t joy_adapter_control_port_8 =
+{
+    "Joystick adapter port 8",
+    0,                      /* has NO potentiometer connected to this port */
+    0,                      /* has NO lightpen support on this port */
+    0,                      /* has NO joystick adapter on this port */
+    1,                      /* has output support on this port */
+    0                       /* port can be switched on/off */
+};
+
 static int init_joyport_ports(void)
 {
     if (joyport_port_register(JOYPORT_3, &joy_adapter_control_port_1) < 0) {
@@ -216,7 +269,22 @@ static int init_joyport_ports(void)
     if (joyport_port_register(JOYPORT_4, &joy_adapter_control_port_2) < 0) {
         return -1;
     }
-    return joyport_port_register(JOYPORT_5, &joy_adapter_control_port_3);
+    if (joyport_port_register(JOYPORT_5, &joy_adapter_control_port_3) < 0) {
+        return -1;
+    }
+    if (joyport_port_register(JOYPORT_6, &joy_adapter_control_port_4) < 0) {
+        return -1;
+    }
+    if (joyport_port_register(JOYPORT_7, &joy_adapter_control_port_5) < 0) {
+        return -1;
+    }
+    if (joyport_port_register(JOYPORT_8, &joy_adapter_control_port_6) < 0) {
+        return -1;
+    }
+    if (joyport_port_register(JOYPORT_9, &joy_adapter_control_port_7) < 0) {
+        return -1;
+    }
+    return joyport_port_register(JOYPORT_10, &joy_adapter_control_port_8);
 }
 
 /* PET-specific resource initialization.  This is called before initializing
@@ -380,6 +448,10 @@ int machine_resources_init(void)
     }
     if (userport_joystick_synergy_resources_init() < 0) {
         init_resource_fail("userport synergy joystick");
+        return -1;
+    }
+    if (userport_joystick_woj_resources_init() < 0) {
+        init_resource_fail("userport woj joystick");
         return -1;
     }
     if (userport_spt_joystick_resources_init() < 0) {
@@ -962,8 +1034,8 @@ void pet_crtc_set_screen(void)
              *
              * Tuned specifically for 64 clocks (= chars) per scanline,
              * for the Cursor #18 Hi-Res program.
-             * The exact time of the IRQ is probably not 100% right,
-             * but close enough to get a visual effect.
+             * Unless CRTC_BEAM_RACING is enabled, the exact time of the IRQ is
+             * not 100% right, but close enough to get a visual effect.
              *
              * 15625 Hz horizontal
              * PET: cycles per frame set to 16640, refresh to 60.096Hz
@@ -975,9 +1047,18 @@ void pet_crtc_set_screen(void)
              * Presumably this should correct the frequency which is
              * slightly over 60 Hz: 60.096 * 622 / 623 = 59.99954.
              *
-             * Note that with the granularity of 1 scanline we cannot
-             * really get closer to the "real" freqency, assuming that
-             * the 622/623 fix is perfect: 60 * 623 / 622 = 60.096 463.
+             * However, 60.096 * 625 / 626 = 60.0000...
+             * so it could have done even better.
+             *
+             * Since we use the CRTC, a raster line is considered to start at
+             * the left edge of the visible characters. So the right border,
+             * horizontal retrace, and left border are at the end of the line.
+             * Likewise, scan line 0 is the first text scan line.
+             * There are 200 text lines, 20 bottom border, 20 vertical retrace
+             * and 20 top border lines.
+             * The "off-screen" signal, which triggers the IRQ, goes on just
+             * after the last text character, and comes on 3*20 lines later, at
+             * the same place in line -1 (259).
              */
               63, /* R0 total horizontal characters - 1 */
               40, /* R1 displayed horizontal characters */
@@ -993,14 +1074,6 @@ void pet_crtc_set_screen(void)
                0, /* R11 CURSOREND */
             0x10, /* R12 DISPSTARTH */
             0x00, /* R13 DISPSTARTL */
-#if 0
-            /*
-             * Original values.
-             * PET: cycles per frame set to 17920, refresh to 55.803Hz
-             */
-            63, 40, 50, 8, 32, 16, 25, 29,
-            0, 7, 0, 0, 0x10, 0,
-#endif
         };
         int r;
 

@@ -571,7 +571,7 @@ static int is_a_number(const char *str)
     size_t len = strlen(str);
 
     for (i = 0; i < len; i++) {
-        if (!isdigit(str[i])) {
+        if (!isdigit((unsigned char)str[i])) {
             return 0;
         }
     }
@@ -647,6 +647,11 @@ int userport_cmdline_options_init(void)
 void userport_enable(int val)
 {
     userport_active = val ? 1 : 0;
+}
+
+int userport_get_active_state(void)
+{
+    return userport_active;
 }
 
 /* ---------------------------------------------------------------------------------------------------------- */

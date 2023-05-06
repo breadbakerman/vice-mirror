@@ -29,6 +29,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "alarm.h"
 #include "archdep.h"
@@ -57,6 +58,7 @@
 #include "monitor_network.h"
 #include "monitor_binary.h"
 #include "network.h"
+#include "palette.h"
 #include "printer.h"
 #include "resources.h"
 #include "romset.h"
@@ -93,6 +95,7 @@ static int jam_action = MACHINE_JAM_ACTION_DIALOG;
 int machine_keymap_index;
 static char *ExitScreenshotName = NULL;
 static char *ExitScreenshotName1 = NULL;
+static bool is_first_reset = true;
 
 /* NOTE: this function is very similar to drive_jam - in case the behavior
          changes, change drive_jam too */
@@ -238,6 +241,12 @@ void machine_reset(void)
     monitor_reset_hook();
 
     vsync_reset_hook();
+
+    /* If this is the first machine reset, kick off any requested autostart */
+    if (is_first_reset) {
+        is_first_reset = false;
+        initcmdline_check_attach();
+    }
 }
 
 void machine_maincpu_init(void)
@@ -372,6 +381,8 @@ void machine_shutdown(void)
         ui_shutdown();
         ui_actions_shutdown();
     }
+
+    palette_shutdown();
 
     sysfile_shutdown();
 

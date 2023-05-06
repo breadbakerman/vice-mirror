@@ -35,6 +35,10 @@
 #include "types.h"
 
 
+/* This define switches the sound system sample calculation
+   to use the new and experimental float based sound system */
+/* #define SOUND_SYSTEM_FLOAT */
+
 /* OSS: check if needed defines are present */
 #ifdef USE_OSS
 
@@ -106,7 +110,9 @@ enum {
 #define SOUND_FRAGMENT_SIZE SOUND_FRAGMENT_MEDIUM
 #endif
 
-#define SOUND_CHANNELS_MAX 2
+#define SOUND_OUTPUT_CHANNELS_MAX 2
+
+#define SOUND_CHIP_CHANNELS_MAX 8
 
 /** \brief  Maximum number of SIDs supported by the emulation.
  */
@@ -215,6 +221,7 @@ typedef struct sound_desc_s {
     int device_type;
 } sound_desc_t;
 
+#ifndef SOUND_SYSTEM_FLOAT
 static inline int16_t sound_audio_mix(int ch1, int ch2)
 {
     if (ch1 == 0) {
@@ -235,6 +242,7 @@ static inline int16_t sound_audio_mix(int ch1, int ch2)
 
     return (int16_t)-((-(ch1) + -(ch2)) - (-(ch1) * -(ch2) / 32768));
 }
+#endif
 
 sound_desc_t *sound_get_valid_devices(int type, int sort);
 
@@ -299,6 +307,19 @@ const char *sound_device_name(unsigned int num);
 
 sound_t *sound_get_psid(unsigned int channel);
 
+#ifdef SOUND_SYSTEM_FLOAT
+/* This structure is used by sound producing chips/devices to indicate the left/right mixing in stereo mode per chip channel */
+typedef struct sound_chip_mixing_spec_s {
+
+    /* left channel volume of a mono render stream for stereo output, can be used to put the sound left, right, or both, can also be used for panning */
+    int left_channel_volume;
+
+    /* right channel volume of a mono render stream for stereo output, can be used to put the sound left, right, or both, can also be used for panning */
+    int right_channel_volume;
+
+} sound_chip_mixing_spec_t;
+#endif
+
 /* This structure is used by sound producing chips/devices */
 typedef struct sound_chip_s {
     /* sound chip open function */
@@ -310,8 +331,13 @@ typedef struct sound_chip_s {
     /* sound chip close function */
     void (*close)(sound_t *psid);
 
+#ifdef SOUND_SYSTEM_FLOAT
+    /* sound chip calculate samples function */
+    int (*calculate_samples)(sound_t **psid, float *pbuf, int nr, int sound_chip_channels, CLOCK *delta_t);
+#else
     /* sound chip calculate samples function */
     int (*calculate_samples)(sound_t **psid, int16_t *pbuf, int nr, int sound_output_channels, int sound_chip_channels, CLOCK *delta_t);
+#endif
 
     /* sound chip store function */
     void (*store)(sound_t *psid, uint16_t addr, uint8_t val);
@@ -328,6 +354,11 @@ typedef struct sound_chip_s {
     /* sound chip 'get_amount_of_channels()' function */
     int (*channels)(void);
 
+#ifdef SOUND_SYSTEM_FLOAT
+    /* specs for mixing mono chip streams to a stereo stream, stereo channel placement */
+    sound_chip_mixing_spec_t *sound_chip_channel_mixing;
+#endif
+
     /* sound chip enabled flag */
     int chip_enabled;
 
@@ -342,7 +373,12 @@ typedef struct sound_dac_s {
 } sound_dac_t;
 
 void sound_dac_init(sound_dac_t *dac, int speed);
+
+#ifdef SOUND_SYSTEM_FLOAT
+int sound_dac_calculate_samples(sound_dac_t *dac, float *pbuf, int value, int nr);
+#else
 int sound_dac_calculate_samples(sound_dac_t *dac, int16_t *pbuf, int value, int nr, int soc, int cs);
+#endif
 
 /* recording related functions, equivalent to screenshot_... */
 void sound_stop_recording(void);

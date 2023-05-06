@@ -55,10 +55,12 @@
 #endif
 
 #include "archdep.h"
+#include "attach.h"
 #include "autostart.h"
 #include "basedialogs.h"
 #include "cmdline.h"
 #include "cartimagewidget.h"
+#include "cartridgewidgets.h"
 #include "crtcontrolwidget.h"
 #include "debug.h"
 #include "debug_gtk3.h"
@@ -807,6 +809,7 @@ static void on_drag_data_received(GtkWidget *widget,
     gchar *filename = NULL;
     gchar **files = NULL;
     guchar *text = NULL;
+    GdkDragAction action = gdk_drag_context_get_selected_action (context);
 
     switch (info) {
 
@@ -886,8 +889,17 @@ static void on_drag_data_received(GtkWidget *widget,
 
     /* can we attempt autostart? */
     if (filename != NULL) {
-        if (autostart_autodetect(filename, NULL, 0, AUTOSTART_MODE_RUN) != 0) {
-            /* TODO: add proper UI error */
+        if (action != GDK_ACTION_MOVE) {
+            /* drop with alt ("link") -> only load, not run */
+            int mode = (action == GDK_ACTION_LINK) ? AUTOSTART_MODE_LOAD : AUTOSTART_MODE_RUN;
+            if (autostart_autodetect(filename, NULL, 0, mode) != 0) {
+                /* TODO: add proper UI error */
+            }
+        } else {
+            /* drop with shift ("move") -> only mount the disk */
+            if (file_system_attach_disk(8, 0, filename) < 0) {
+                /* TODO: add proper UI error */
+            }
         }
         g_free(filename);
     }
@@ -1102,11 +1114,15 @@ static gboolean ui_action_dispatch_impl(gpointer data)
  */
 static void ui_action_dispatch(const ui_action_map_t *map)
 {
-    if (mainlock_is_vice_thread()) {
-        /* we're on the main thread, push to UI thread */
-        gdk_threads_add_timeout(0, ui_action_dispatch_impl, (gpointer)(map->handler));
+    if (map->uithread || map->dialog) {
+        if (mainlock_is_vice_thread()) {
+            /* we're on the main thread, push to UI thread */
+            gdk_threads_add_timeout(0, ui_action_dispatch_impl, (gpointer)(map->handler));
+        } else {
+            /* we're already on the UI thread */
+            map->handler();
+        }
     } else {
-        /* we're already on the UI thread */
         map->handler();
     }
 }
@@ -1603,7 +1619,7 @@ void macos_set_dock_icon_workaround(GdkPixbuf *icon)
  * This workaround is the obj-c runtime equivalent of calling:
  * [[NSApplication sharedApplication] activateIgnoringOtherApps: YES];
  */
-void macos_activate_application_workaround()
+void macos_activate_application_workaround(void)
 {
     id ns_application;
 
@@ -1808,7 +1824,7 @@ void ui_create_main_window(video_canvas_t *canvas)
                           GTK_DEST_DEFAULT_ALL,
                           ui_drag_targets,
                           UI_DRAG_TARGETS_COUNT,
-                          GDK_ACTION_COPY);
+                          GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK);
         g_signal_connect(new_window,
                          "drag-data-received",
                          G_CALLBACK(on_drag_data_received),
@@ -2364,7 +2380,11 @@ void ui_shutdown(void)
     uidata_shutdown();
     ui_statusbar_shutdown();
     ui_hotkeys_shutdown();
-    cart_image_widget_shutdown();
+    /* FIXME: the old API call should be removed once the cartridge settings
+     *        have all moved to the new API.
+     */
+    cart_image_widget_shutdown();   /* old API */
+    cart_image_widgets_shutdown();  /* new API */
     settings_keyboard_widget_shutdown();
 #if 0
     ui_actions_shutdown();

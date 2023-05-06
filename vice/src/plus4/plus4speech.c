@@ -483,7 +483,12 @@ void speech_setup_context(machine_context_t *machine_ctx)
 
 /* Some prototypes are needed */
 static int speech_sound_machine_init(sound_t *psid, int speed, int cycles_per_sec);
+
+#ifdef SOUND_SYSTEM_FLOAT
+static int speech_sound_machine_calculate_samples(sound_t **psid, float *pbuf, int nr, int sound_chip_channels, CLOCK *delta_t);
+#else
 static int speech_sound_machine_calculate_samples(sound_t **psid, int16_t *pbuf, int nr, int sound_output_channels, int sound_chip_channels, CLOCK *delta_t);
+#endif
 
 static int speech_sound_machine_cycle_based(void)
 {
@@ -494,6 +499,16 @@ static int speech_sound_machine_channels(void)
 {
     return 1;
 }
+
+#ifdef SOUND_SYSTEM_FLOAT
+/* stereo mixing placement of the V364 speech sound */
+static sound_chip_mixing_spec_t speech_sound_mixing_spec[SOUND_CHIP_CHANNELS_MAX] = {
+    {
+        100, /* left channel volume % in case of stereo output, default output to both */
+        100  /* right channel volume % in case of stereo output, default output to both */
+    }
+};
+#endif
 
 /* V364 speech sound chip */
 static sound_chip_t speech_sound_chip = {
@@ -506,6 +521,9 @@ static sound_chip_t speech_sound_chip = {
     NULL,                                   /* NO sound chip reset function */
     speech_sound_machine_cycle_based,       /* sound chip 'is_cycle_based()' function, chip is NOT cycle based */
     speech_sound_machine_channels,          /* sound chip 'get_amount_of_channels()' function, sound chip has 1 channel */
+#ifdef SOUND_SYSTEM_FLOAT
+    speech_sound_mixing_spec,               /* stereo mixing placement specs */
+#endif
     0                                       /* sound chip enabled flag, toggled upon device (de-)activation */
 };
 
@@ -618,6 +636,27 @@ int speech_cmdline_options_init(void)
 /*
     called periodically for every sound fragment that is played
 */
+#ifdef SOUND_SYSTEM_FLOAT
+/* FIXME */
+static int speech_sound_machine_calculate_samples(sound_t **psid, float *pbuf, int nr, int scc, CLOCK *delta_t)
+{
+    int i;
+    float *buffer;
+
+    buffer = lib_malloc(nr * sizeof(float));
+
+    t6721_update_output(t6721, buffer, nr);
+
+    /* mix generated samples to output */
+    for (i = 0; i < nr; i++) {
+        pbuf[i] = buffer[i];
+    }
+
+    lib_free(buffer);
+
+    return nr;
+}
+#else
 static int speech_sound_machine_calculate_samples(sound_t **psid, int16_t *pbuf, int nr, int soc, int scc, CLOCK *delta_t)
 {
     int i;
@@ -639,6 +678,7 @@ static int speech_sound_machine_calculate_samples(sound_t **psid, int16_t *pbuf,
 
     return nr;
 }
+#endif
 
 static int speech_sound_machine_init(sound_t *psid, int speed, int cycles_per_sec)
 {

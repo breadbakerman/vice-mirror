@@ -83,6 +83,13 @@ static UI_MENU_CALLBACK(toggle_VICIIShowStatusbar_callback)
 
 static UI_MENU_CALLBACK(pause_callback_wrapper);
 
+static UI_MENU_CALLBACK(Machine_dynmenu_callback)
+{
+    scpu64_create_machine_menu();
+
+    return MENU_SUBMENU_STRING;
+}
+
 static ui_menu_entry_t xscpu64_main_menu[] = {
     { "Autostart image",
       MENU_ENTRY_DIALOG,
@@ -103,7 +110,7 @@ static ui_menu_entry_t xscpu64_main_menu[] = {
       (ui_callback_data_t)printer_iec_menu },
     { "Machine settings",
       MENU_ENTRY_SUBMENU,
-      submenu_callback,
+      Machine_dynmenu_callback,
       (ui_callback_data_t)scpu64_hardware_menu },
     { "Video settings",
       MENU_ENTRY_SUBMENU,
@@ -245,8 +252,8 @@ int scpu64ui_init(void)
 
     sdl_ui_set_menu_params = scpu64ui_set_menu_params;
 
-    uijoyport_menu_create(1, 1, 1, 1, 1);
-    uijoystick_menu_create(1, 1, 1, 1, 1);
+    uijoyport_menu_create(1, 1, 1, 1, 1, 0);
+    uijoystick_menu_create(1, 1, 1, 1, 1, 0);
     uiuserport_menu_create(1);
     uisampler_menu_create();
     uicart_menu_create();

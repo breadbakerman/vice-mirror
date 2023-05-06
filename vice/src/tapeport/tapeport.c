@@ -434,7 +434,7 @@ static int is_a_number(const char *str)
     size_t len = strlen(str);
 
     for (i = 0; i < len; i++) {
-        if (!isdigit(str[i])) {
+        if (!isdigit((unsigned char)str[i])) {
             return 0;
         }
     }
@@ -494,16 +494,20 @@ static char *build_tapeport_string(int port)
 
 static cmdline_option_t cmdline_options_port1[] =
 {
+    /* NOTE: although we use CALL_FUNCTION, we put the resource that will be
+             modified into the array - this helps reconstructing the cmdline */
     { "-tapeport1device", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS | CMDLINE_ATTRIB_DYNAMIC_DESCRIPTION,
-      set_tapeport_cmdline_device, (void *)TAPEPORT_PORT_1, NULL, NULL,
+      set_tapeport_cmdline_device, (void *)TAPEPORT_PORT_1, "TapePort1Device", NULL,
       "Device", NULL },
     CMDLINE_LIST_END
 };
 
 static cmdline_option_t cmdline_options_port2[] =
 {
+    /* NOTE: although we use CALL_FUNCTION, we put the resource that will be
+             modified into the array - this helps reconstructing the cmdline */
     { "-tapeport2device", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS | CMDLINE_ATTRIB_DYNAMIC_DESCRIPTION,
-      set_tapeport_cmdline_device, (void *)TAPEPORT_PORT_2, NULL, NULL,
+      set_tapeport_cmdline_device, (void *)TAPEPORT_PORT_2, "TapePort2Device", NULL,
       "Device", NULL },
     CMDLINE_LIST_END
 };
@@ -552,6 +556,11 @@ int tapeport_cmdline_options_init(void)
 void tapeport_enable(int val)
 {
     tapeport_active = val ? 1 : 0;
+}
+
+int tapeport_get_active_state(void)
+{
+    return tapeport_active;
 }
 
 /* ---------------------------------------------------------------------------------------------------------- */

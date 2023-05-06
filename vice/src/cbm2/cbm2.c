@@ -101,6 +101,7 @@
 #include "userport_8bss.h"
 #include "userport_dac.h"
 #include "userport_digimax.h"
+#include "userport_hummer_joystick.h"
 #include "userport_io_sim.h"
 #include "userport_joystick.h"
 #include "userport_petscii_snespad.h"
@@ -108,6 +109,8 @@
 #include "userport_rtc_ds1307.h"
 #include "userport_spt_joystick.h"
 #include "userport_superpad64.h"
+#include "userport_synergy_joystick.h"
+#include "userport_woj_joystick.h"
 #include "vice-event.h"
 #include "video.h"
 #include "video-sound.h"
@@ -432,6 +435,10 @@ int machine_resources_init(void)
         init_resource_fail("userport synergy joystick");
         return -1;
     }
+    if (userport_joystick_woj_resources_init() < 0) {
+        init_resource_fail("userport woj joystick");
+        return -1;
+    }
     if (userport_spt_joystick_resources_init() < 0) {
         init_resource_fail("userport stupid pet tricks joystick");
         return -1;
@@ -713,7 +720,7 @@ int machine_specific_init(void)
         return -1;
     }
     crtc_set_retrace_callback(cbm2_crtc_signal);
-    crtc_set_retrace_type(0);
+    crtc_set_retrace_type(1);
     crtc_set_hw_options(1, 0x7ff, 0x1000, 512, -0x2000);
 
     cia1_init(machine_context.cia1);

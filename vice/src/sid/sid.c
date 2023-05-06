@@ -79,6 +79,40 @@ static CLOCK pot_cycle = 0;  /* pot sampling cycle */
 static uint8_t val_pot_x = 0xff, val_pot_y = 0xff; /* last sampling value */
 #endif
 
+/* ------------------------------------------------------------------------- */
+
+struct sound_s *fakesid_open(uint8_t *sidstate);
+int fakesid_init(struct sound_s *psid, int speed, int cycles_per_sec, int factor);
+void fakesid_close(struct sound_s *psid);
+uint8_t fakesid_read(struct sound_s *psid, uint16_t addr);
+void fakesid_store(struct sound_s *psid, uint16_t addr, uint8_t val);
+void fakesid_reset(struct sound_s *psid, CLOCK cpu_clk);
+int fakesid_calculate_samples(struct sound_s *psid, short *pbuf, int nr,
+                            int interleave, CLOCK *delta_t);
+char *fakesid_dump_state(struct sound_s *psid);
+void fakesid_resid_state_read(struct sound_s *psid,
+                    struct sid_snapshot_state_s *sid_state);
+void fakesid_resid_state_write(struct sound_s *psid,
+                    struct sid_snapshot_state_s *sid_state);
+
+sid_engine_t fakesid_hooks =
+{
+    fakesid_open,
+    fakesid_init,
+    fakesid_close,
+    fakesid_read,
+    fakesid_store,
+    fakesid_reset,
+    fakesid_calculate_samples,
+    fakesid_dump_state,
+    fakesid_resid_state_read,
+    fakesid_resid_state_write
+};
+
+struct sound_s {};
+
+/* ------------------------------------------------------------------------- */
+
 uint8_t *sid_get_siddata(unsigned int channel)
 {
     return siddata[channel];
@@ -460,8 +494,12 @@ bool sid_sound_machine_set_engine_hooks(void)
         return false;
     }
 
+    sid_engine = fakesid_hooks;
+
 #ifdef HAVE_FASTSID
-    sid_engine = fastsid_hooks;
+    if (sidengine == SID_ENGINE_FASTSID) {
+        sid_engine = fastsid_hooks;
+    }
 #endif
 
 #ifdef HAVE_RESID
@@ -486,6 +524,7 @@ sound_t *sid_sound_machine_open(int chipno)
 
 /* manage temporary buffers. if the requested size is smaller or equal to the
  * size of the already allocated buffer, reuse it.  */
+#ifndef SOUND_SYSTEM_FLOAT
 static int16_t *buf1 = NULL;
 static int16_t *buf2 = NULL;
 static int16_t *buf3 = NULL;
@@ -517,7 +556,6 @@ static int blen7 = 0;
         return buf##nr;                             \
     }
 
-
 GETBUFx(1)
 GETBUFx(2)
 GETBUFx(3)
@@ -525,6 +563,8 @@ GETBUFx(4)
 GETBUFx(5)
 GETBUFx(6)
 GETBUFx(7)
+
+#endif
 
 int sid_sound_machine_init_vbr(sound_t *psid, int speed, int cycles_per_sec, int factor)
 {
@@ -539,6 +579,7 @@ int sid_sound_machine_init(sound_t *psid, int speed, int cycles_per_sec)
 void sid_sound_machine_close(sound_t *psid)
 {
     sid_engine.close(psid);
+#ifndef SOUND_SYSTEM_FLOAT
     /* free the temp. buffers */
     if (buf1) {
         lib_free(buf1);
@@ -575,6 +616,7 @@ void sid_sound_machine_close(sound_t *psid)
         blen7 = 0;
         buf7 = NULL;
     }
+#endif
 }
 
 uint8_t sid_sound_machine_read(sound_t *psid, uint16_t addr)
@@ -592,6 +634,13 @@ void sid_sound_machine_reset(sound_t *psid, CLOCK cpu_clk)
     sid_engine.reset(psid, cpu_clk);
 }
 
+#ifdef SOUND_SYSTEM_FLOAT
+/* FIXME: the sound placement feature is not made yet, so placement is hard coded */
+int sid_sound_machine_calculate_samples(sound_t **psid, float *pbuf, int nr, int scc, CLOCK *delta_t)
+{
+    return sid_engine.calculate_samples(psid[scc], pbuf, nr, delta_t);
+}
+#else
 int sid_sound_machine_calculate_samples(sound_t **psid, int16_t *pbuf, int nr, int soc, int scc, CLOCK *delta_t)
 {
     int i;
@@ -883,6 +932,7 @@ int sid_sound_machine_calculate_samples(sound_t **psid, int16_t *pbuf, int nr, i
     }
     return tmp_nr;
 }
+#endif
 
 char *sid_sound_machine_dump_state(sound_t *psid)
 {
@@ -1150,4 +1200,49 @@ int sid_machine_engine_get_max_sids(int engine)
 int sid_machine_can_have_multiple_sids(void)
 {
     return sid_machine_get_max_sids() > 1;
+}
+
+/* ------------------------------------------------------------------------- */
+
+struct sound_s *fakesid_open(uint8_t *sidstate) {
+    sound_t *psid;
+
+    psid = lib_calloc(1, sizeof(sound_t));
+
+    return psid;
+}
+
+int fakesid_init(struct sound_s *psid, int speed, int cycles_per_sec, int factor) {
+    return 1;
+}
+
+void fakesid_close(struct sound_s *psid) {
+    lib_free(psid);
+}
+
+uint8_t fakesid_read(struct sound_s *psid, uint16_t addr) {
+    return 0;
+}
+
+void fakesid_store(struct sound_s *psid, uint16_t addr, uint8_t val) {
+}
+
+void fakesid_reset(struct sound_s *psid, CLOCK cpu_clk) {
+}
+
+int fakesid_calculate_samples(struct sound_s *psid, short *pbuf, int nr,
+                            int interleave, CLOCK *delta_t) {
+    memset(pbuf, 0, 2 * nr);
+    return nr;
+}
+char *fakesid_dump_state(struct sound_s *psid) {
+    return NULL;
+}
+
+void fakesid_resid_state_read(struct sound_s *psid,
+                    struct sid_snapshot_state_s *sid_state) {
+}
+
+void fakesid_resid_state_write(struct sound_s *psid,
+                    struct sid_snapshot_state_s *sid_state) {
 }

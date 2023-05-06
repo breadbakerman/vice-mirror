@@ -135,7 +135,7 @@ jobs:
           cd vice
           ./src/buildtools/genvicedate_h.sh
           ./autogen.sh
-          ./configure --enable-headlessui --enable-html-docs --without-pulse --without-alsa --without-png
+          ./configure --enable-headlessui --enable-pdf-docs --enable-html-docs --without-pulse --without-alsa --without-png
           make stylecheck
           make
 
@@ -179,7 +179,7 @@ jobs:
         arch:
         - { msystem: MINGW64, arch: x86_64 }
         - { msystem: MINGW32, arch: i686 }
-        ui: [ GTK3, SDL2 ]
+        ui: [ GTK3, SDL2, SDL1 ]
     steps:
       - run: git config --global core.autocrlf input
         shell: bash
@@ -218,6 +218,7 @@ jobs:
             mingw-w64-${{ matrix.arch.arch }}-flac
             mingw-w64-${{ matrix.arch.arch }}-icoutils
             mingw-w64-${{ matrix.arch.arch }}-libpcap
+            mingw-w64-${{ matrix.arch.arch }}-libusb
             mingw-w64-${{ matrix.arch.arch }}-gtk3
 
       - name: Install SDL2 Dependencies if Applicable
@@ -245,8 +246,38 @@ jobs:
             mingw-w64-${{ matrix.arch.arch }}-flac
             mingw-w64-${{ matrix.arch.arch }}-icoutils
             mingw-w64-${{ matrix.arch.arch }}-libpcap
+            mingw-w64-${{ matrix.arch.arch }}-libusb
             mingw-w64-${{ matrix.arch.arch }}-SDL2
             mingw-w64-${{ matrix.arch.arch }}-SDL2_image
+
+      - name: Install SDL1 Dependencies if Applicable
+        if: ${{ matrix.ui == 'SDL1' }}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.arch.msystem }}
+          update: true
+          install: >-
+            git
+            base-devel
+            autotools
+            mingw-w64-${{ matrix.arch.arch }}-toolchain
+            unzip
+            zip
+            p7zip
+            subversion
+            git
+            mingw-w64-${{ matrix.arch.arch }}-pkg-config
+            mingw-w64-${{ matrix.arch.arch }}-ntldd
+            mingw-w64-${{ matrix.arch.arch }}-glew
+            mingw-w64-${{ matrix.arch.arch }}-giflib
+            mingw-w64-${{ matrix.arch.arch }}-lame
+            mingw-w64-${{ matrix.arch.arch }}-libvorbis
+            mingw-w64-${{ matrix.arch.arch }}-flac
+            mingw-w64-${{ matrix.arch.arch }}-icoutils
+            mingw-w64-${{ matrix.arch.arch }}-libpcap
+            mingw-w64-${{ matrix.arch.arch }}-libusb
+            mingw-w64-${{ matrix.arch.arch }}-SDL
+            mingw-w64-${{ matrix.arch.arch }}-SDL_image
 
       - name: Build
         id: build
@@ -319,6 +350,9 @@ jobs:
                 { name: 'SDL2',
                   conf: '--enable-sdl2ui --with-sdlsound --without-pulse',
                   deps: 'libsdl2-dev libsdl2-image-dev' },
+                { name: 'SDL1',
+                  conf: '--enable-sdl1ui --with-sdlsound --without-pulse',
+                  deps: 'libsdl1.2-dev libsdl-image1.2-dev' },
                 { name: 'Headless',
                   conf: '--enable-headlessui --with-pulse',
                   deps: 'libpulse-dev' } ]
@@ -356,7 +390,7 @@ jobs:
           ./configure --enable-option-checking=fatal --prefix=/usr --enable-arch=no \
                       --enable-ethernet --disable-pdf-docs --disable-html-docs \
                       --with-fastsid --with-resid --enable-cpuhistory --with-gif \
-                      --with-png --with-vorbis --with-flac --with-mpg123 --enable-lame \
+                      --with-png --with-vorbis --with-flac --with-mpg123 --with-lame \
                       --enable-midi --with-alsa ${{ matrix.ui.conf }}
           make -j2 -s --no-print-directory SVN_REVISION_OVERRIDE=$(echo "${{ github.ref }}" | sed 's/^.*r//')
           # Don't use install-strip, we want symbols intact for backtraces

@@ -50,24 +50,18 @@ typedef struct driveriot2_context_s {
 
 void riot2_store(diskunit_context_t *ctxptr, uint16_t addr, uint8_t data)
 {
+    ctxptr->cpu->cpu_last_data = data;
     riotcore_store(ctxptr->riot2, addr, data);
 }
 
 uint8_t riot2_read(diskunit_context_t *ctxptr, uint16_t addr)
 {
-    return riotcore_read(ctxptr->riot2, addr);
+    return ctxptr->cpu->cpu_last_data = riotcore_read(ctxptr->riot2, addr);
 }
 
 uint8_t riot2_peek(diskunit_context_t *ctxptr, uint16_t addr)
 {
     return riotcore_peek(ctxptr->riot2, addr);
-}
-
-int riot2_dump(diskunit_context_t *ctxptr, uint16_t addr)
-{
-    /* TODO: implement dump feature */
-    /* riotcore_dump(ctxptr->riot2, addr); */
-    return -1;
 }
 
 static void set_irq(riot_context_t *riot_context, int fl, CLOCK clk)

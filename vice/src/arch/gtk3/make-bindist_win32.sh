@@ -155,6 +155,7 @@ if test x"$CROSS" != "xtrue"; then
     cp $UNZIPBIN $BUILDPATH/bin
     cp `ntldd -R $UNZIPBIN | gawk '/\\\\bin\\\\/{print $3;}' | cygpath -f -` $BUILDPATH/bin
   fi
+
 else
 
 # The following lines assume a cross compiler,

@@ -838,12 +838,6 @@ static void ciacore_store_internal(cia_context_t *cia_context, uint16_t addr, ui
             if (addr == CIA_TOD_HR) {
                 /* force bits 6-5 = 0 */
                 byte &= 0x9f;
-                /* Flip AM/PM on hour 12  */
-                /* Flip AM/PM only when writing time, not when writing alarm */
-                if ((byte & 0x1f) == 0x12 &&
-                        (cia_context->c_cia[CIA_CRB] & CIA_CRB_ALARM) == CIA_CRB_ALARM_TOD) {
-                    byte ^= 0x80;
-                }
             } else if (addr == CIA_TOD_MIN) {
                 byte &= 0x7f;
             } else if (addr == CIA_TOD_SEC) {
@@ -861,19 +855,24 @@ static void ciacore_store_internal(cia_context_t *cia_context, uint16_t addr, ui
                 } else {
                     /* set time */
                     if (addr == CIA_TOD_TEN) {
-                        /* apparently the tickcounter is reset to 0 when the clock
+                        /* the tickcounter is kept clear while the clock
                            is not running and then restarted by writing to the 10th
                            seconds register */
                         if (cia_context->todstopped) {
                             cia_context->todtickcounter = 0;
+                            cia_context->todstopped = 0;
                         }
-                        cia_context->todstopped = 0;
                     }
                     if (addr == CIA_TOD_HR) {
                         cia_context->todstopped = 1;
                     }
                     changed = cia_context->c_cia[addr] != byte;
-                    cia_context->c_cia[addr] = byte;
+                    if (changed) {
+                        // Flip AM/PM on hour 12 on the rising edge of the comparator
+                        if ((addr == CIA_TOD_HR) && ((byte & 0x1f) == 0x12))
+                            byte ^= 0x80;
+                        cia_context->c_cia[addr] = byte;
+                    }
                 }
                 if (changed) {
                     check_ciatodalarm(cia_context, rclk);
@@ -1563,14 +1562,36 @@ static void ciacore_inttb_entry(CLOCK offset, void *data)
  * (which is cheating).
  */
 
-void ciacore_set_flag(cia_context_t *cia_context)
+static void ciacore_async_interrupt(cia_context_t *cia_context, int flag)
 {
+    /*
+     * This is for when an external signal has come in,
+     * which doesn't synchronize with our internal activities.
+     */
     CLOCK rclk = *(cia_context->clk_ptr);
 
-    cia_set_irq_flag(cia_context, rclk, CIA_IM_FLG);
-    if (cia_context->ifr_clock == rclk) { /* don't call it twice */
-        cia_ifr_current(cia_context, rclk, CIA_IFR_CUR_NXT);
+    cia_set_irq_flag(cia_context, rclk, flag);
+
+    /*
+     * Leave calling cia_ifr_current() to the idle (or another) alarm,
+     * since we're totally async here.
+     */
+    CLOCK idleclk = alarm_clk(cia_context->idle_alarm);
+    if (idleclk > rclk + 1) {
+        /*
+         * If not already scheduled for the near future, re-schedule
+         * it sooner. We could schedule it for rclk+0 if we could be
+         * sure it won't be scheduled twice then (but we can't).
+         */
+        alarm_set(cia_context->idle_alarm, rclk + 1);
+    } else {
+        DBG(("ciacore_async_interrupt: idleclk == rclk + %ld\n", (long)(idleclk - rclk)));
     }
+}
+
+void ciacore_set_flag(cia_context_t *cia_context)
+{
+    ciacore_async_interrupt(cia_context, CIA_IM_FLG);
 }
 
 /*
@@ -1580,7 +1601,6 @@ void ciacore_set_flag(cia_context_t *cia_context)
 void ciacore_set_sdr(cia_context_t *cia_context, uint8_t data)
 {
     if ((cia_context->c_cia[CIA_CRA] & CIA_CRA_SPMODE) == CIA_CRA_SPMODE_IN) {
-        CLOCK rclk = *(cia_context->clk_ptr);
 
         cia_context->c_cia[CIA_SDR] = data;
         DBG(("ciacore_set_sdr %s: %02x\n", cia_context->myname, data));
@@ -1590,12 +1610,7 @@ void ciacore_set_sdr(cia_context_t *cia_context, uint8_t data)
          * cia_context->sdr_delay |= CIA_SDR_SET_SDR_IRQ2;
          * and enable the sdr_alarm ?
          */
-        cia_set_irq_flag(cia_context, rclk, CIA_IM_SDR);
-
-        /* cia_ifr_catchup(); has been called in cia_set_irq_flag() */
-        if (cia_context->ifr_clock == rclk) { /* don't call it twice */
-            cia_ifr_current(cia_context, rclk, CIA_IFR_CUR_NXT);
-        }
+        ciacore_async_interrupt(cia_context, CIA_IM_SDR);
 
         alarm_unset(cia_context->sdr_alarm);
     }
@@ -1808,7 +1823,7 @@ static void ciacore_intsdr_entry(CLOCK offset, void *data)
 
 static void ciacore_inttod(CLOCK offset, void *data)
 {
-    int t0, t1, t2, t3, t4, t5, t6, pm, update = 0;
+    int ts, sl, sh, ml, mh, hl, hh, pm, update = 0;
     CLOCK rclk, tclk;
     cia_context_t *cia_context = (cia_context_t *)data;
 
@@ -1861,69 +1876,76 @@ static void ciacore_inttod(CLOCK offset, void *data)
     alarm_set(cia_context->tod_alarm, cia_context->todclk);
 
     if (!(cia_context->todstopped)) {
-        /* count 50/60 hz ticks */
-        cia_context->todtickcounter++;
-        /* wild assumption: counter is 3 bits and is not reset elsewhere */
-        /* FIXME: this doesnt seem to be 100% correct - apparently it is reset
-                  in some cases */
-        cia_context->todtickcounter &= 7;
+        /*
+         * The divider which divides the 50 or 60 Hz power supply ticks into
+         * 10 Hz uses a 3-bit ring counter, which goes 000, 001 011, 111, 110,
+         * 100.
+         * For 50 Hz: matches at 110 (like "4")
+         * For 60 Hz: matches at 100 (like "5")
+         * (the middle bit of the match value is CRA7)
+         * After a match there is a 1 tick delay (until the next power supply
+         * tick) and then the 1/10 seconds counter increases, and the ring
+         * resets to 000.
+         */
+        update = (cia_context->todtickcounter ==
+            ((cia_context->c_cia[CIA_CRA] & CIA_CRA_TODIN_50HZ) ? 4 : 5));
 
-        /* if the counter matches the TOD frequency ... */
-        if (cia_context->todtickcounter ==
-            ((cia_context->c_cia[CIA_CRA] & CIA_CRA_TODIN_50HZ) ? 5 : 6)) {
-            /* reset the counter and update the timer */
+        if (update) {
+            /* Reset the counter */
             cia_context->todtickcounter = 0;
-            update = 1;
+        } else {
+            /* Count 50/60 Hz power supply ticks */
+            cia_context->todtickcounter++;
+            /* Ring counter of 3 bits has 6 states */
+            if (cia_context->todtickcounter > 5)
+                cia_context->todtickcounter = 0;
         }
     }
 
     if (update) {
         /* advance the counters.
-         * - individual counters are all 4 bit
+         * - individual counters are 4 bit
+         *   except for sh and mh which are 3 bits
          */
-        t0 = cia_context->c_cia[CIA_TOD_TEN] & 0x0f;
-        t1 = cia_context->c_cia[CIA_TOD_SEC] & 0x0f;
-        t2 = (cia_context->c_cia[CIA_TOD_SEC] >> 4) & 0x0f;
-        t3 = cia_context->c_cia[CIA_TOD_MIN] & 0x0f;
-        t4 = (cia_context->c_cia[CIA_TOD_MIN] >> 4) & 0x0f;
-        t5 = cia_context->c_cia[CIA_TOD_HR] & 0x0f;
-        t6 = (cia_context->c_cia[CIA_TOD_HR] >> 4) & 0x01;
+        ts = cia_context->c_cia[CIA_TOD_TEN] & 0x0f;
+        sl = cia_context->c_cia[CIA_TOD_SEC] & 0x0f;
+        sh = (cia_context->c_cia[CIA_TOD_SEC] >> 4) & 0x07;
+        ml = cia_context->c_cia[CIA_TOD_MIN] & 0x0f;
+        mh = (cia_context->c_cia[CIA_TOD_MIN] >> 4) & 0x07;
+        hl = cia_context->c_cia[CIA_TOD_HR] & 0x0f;
+        hh = (cia_context->c_cia[CIA_TOD_HR] >> 4) & 0x01;
         pm = cia_context->c_cia[CIA_TOD_HR] & 0x80;
 
         /* tenth seconds (0-9) */
-        t0 = (t0 + 1) & 0x0f;
-        if (t0 == 10) {
-            t0 = 0;
+        ts = (ts + 1) & 0x0f;
+        if (ts == 10) {
+            ts = 0;
             /* seconds (0-59) */
-            t1 = (t1 + 1) & 0x0f; /* x0...x9 */
-            if (t1 == 10) {
-                t1 = 0;
-                t2 = (t2 + 1) & 0x07; /* 0x...5x */
-                if (t2 == 6) {
-                    t2 = 0;
+            sl = (sl + 1) & 0x0f; /* x0...x9 */
+            if (sl == 10) {
+                sl = 0;
+                sh = (sh + 1) & 0x07; /* 0x...5x */
+                if (sh == 6) {
+                    sh = 0;
                     /* minutes (0-59) */
-                    t3 = (t3 + 1) & 0x0f; /* x0...x9 */
-                    if (t3 == 10) {
-                        t3 = 0;
-                        t4 = (t4 + 1) & 0x07; /* 0x...5x */
-                        if (t4 == 6) {
-                            t4 = 0;
+                    ml = (ml + 1) & 0x0f; /* x0...x9 */
+                    if (ml == 10) {
+                        ml = 0;
+                        mh = (mh + 1) & 0x07; /* 0x...5x */
+                        if (mh == 6) {
+                            mh = 0;
                             /* hours (1-12) */
-                            t5 = (t5 + 1) & 0x0f;
-                            if (t6) {
-                                /* toggle the am/pm flag when going from 11 to 12 (!) */
-                                if (t5 == 2) {
-                                    pm ^= 0x80;
-                                }
-                                /* wrap 12h -> 1h (FIXME: when hour became x3 ?) */
-                                if (t5 == 3) {
-                                    t5 = 1;
-                                    t6 = 0;
-                                }
+                            /* flip from 09:59:59 to 10:00:00 */
+                            /* or from 12:59:59 to 01:00:00 */
+                            if (((hh == 1) && (hl == 2))
+                                || ((hh == 0) && (hl == 9))) {
+                                hl = hh;
+                                hh ^= 1;
                             } else {
-                                if (t5 == 10) {
-                                    t5 = 0;
-                                    t6 = 1;
+                                hl = (hl + 1) & 0x0f;
+                                /* toggle the am/pm flag when reaching 12 */
+                                if ((hh == 1) && (hl == 2)) {
+                                    pm ^= 0x80;
                                 }
                             }
                         }
@@ -1938,12 +1960,12 @@ static void ciacore_inttod(CLOCK offset, void *data)
              cia_context->c_cia[CIA_TOD_MIN],
              cia_context->c_cia[CIA_TOD_SEC],
              cia_context->c_cia[CIA_TOD_TEN],
-             pm ? "pm" : "am", t6, t5, t4, t3, t2, t1, t0));
+             pm ? "pm" : "am", hh, hl, mh, ml, sh, sl, ts));
 
-        cia_context->c_cia[CIA_TOD_TEN] = t0;
-        cia_context->c_cia[CIA_TOD_SEC] = t1 | (t2 << 4);
-        cia_context->c_cia[CIA_TOD_MIN] = t3 | (t4 << 4);
-        cia_context->c_cia[CIA_TOD_HR] = t5 | (t6 << 4) | pm;
+        cia_context->c_cia[CIA_TOD_TEN] = ts;
+        cia_context->c_cia[CIA_TOD_SEC] = sl | (sh << 4);
+        cia_context->c_cia[CIA_TOD_MIN] = ml | (mh << 4);
+        cia_context->c_cia[CIA_TOD_HR] = hl | (hh << 4) | pm;
 
         /* check alarm */
         check_ciatodalarm(cia_context, rclk);

@@ -147,6 +147,26 @@ static GtkWidget *drive_device_type_label[NUM_DISK_UNITS];
 static GtkWidget *drive_size[NUM_DISK_UNITS];
 
 
+/** \brief  Determine if the current machine supports IEC
+ *
+ * \return  `TRUE` if IEC-related resources are available
+ */
+static gboolean has_iec(void)
+{
+    switch (machine_class) {
+        case VICE_MACHINE_C64:      /* fall through */
+        case VICE_MACHINE_C64DTV:   /* fall through */
+        case VICE_MACHINE_C64SC:    /* fall through */
+        case VICE_MACHINE_SCPU64:   /* fall through */
+        case VICE_MACHINE_C128:     /* fall through */
+        case VICE_MACHINE_VIC20:    /* fall through */
+        case VICE_MACHINE_PLUS4:
+            return TRUE;
+        default:
+            return FALSE;
+    }
+}
+
 /*
  * Gtk event handlers and custom widget callbacks
  */
@@ -365,20 +385,6 @@ static GtkWidget *create_drive_device_type_widget(int unit)
     combo = vice_gtk3_resource_combo_int_new_sprintf("FileSystemDevice%d",
                                                          device_types,
                                                          unit);
-    /* XXX: Remove all this once xvic supports OpenCBM
-     *
-     * We remove realdrive/OpenCBM here since xvic doesn't work with OpenCBM
-     */
-    if (machine_class == VICE_MACHINE_VIC20) {
-        GtkTreeModel *model;
-        GtkTreeIter   iter;
-
-        model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo));
-        if (gtk_tree_model_get_iter_from_string(model, &iter, "2")) {
-            gtk_list_store_remove(GTK_LIST_STORE(model), &iter);
-        }
-    }
-
     gtk_widget_set_hexpand(combo, TRUE);
     gtk_widget_show_all(combo);
     return combo;
@@ -628,9 +634,11 @@ static int create_left_layout(GtkWidget *grid, int unit)
     row++;
 
     /* RTC save check button */
-    drive_rtc_save[index] = create_rtc_check_button(unit);
-    gtk_grid_attach(GTK_GRID(grid), drive_rtc_save[index],     0, row, 2, 1);
-    row++;
+    if (has_iec()) {
+        drive_rtc_save[index] = create_rtc_check_button(unit);
+        gtk_grid_attach(GTK_GRID(grid), drive_rtc_save[index],     0, row, 2, 1);
+        row++;
+    }
 
     /* true drive emulation check button */
     drive_tde[index] = create_drive_true_emulation_widget(unit);
