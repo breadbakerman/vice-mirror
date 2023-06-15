@@ -63,6 +63,7 @@
 #include "types.h"
 #include "uiapi.h"
 #include "uiactions.h"
+#include "uihotkeys.h"
 #include "util.h"
 #include "version.h"
 #include "video.h"
@@ -266,7 +267,12 @@ int main_program(int argc, char **argv)
     /* Initialize the UI actions system, this needs to happen before the UI
      * init so the UI code can register handlers */
     if (!console_mode && !help_requested) {
+#ifndef USE_HEADLESSUI
         ui_actions_init();
+        /* also initialize the hotkeys resources/cmdline */
+        ui_hotkeys_resources_init();
+        ui_hotkeys_cmdline_options_init();
+#endif
     }
 
     /* Initialize the user interface.  `ui_init_with_args()' might need to handle the

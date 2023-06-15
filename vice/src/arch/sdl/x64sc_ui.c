@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "debug.h"
+#include "c64iec.h"
 #include "c64mem.h"
 #include "c64rom.h"
 #include "c64ui.h"
@@ -65,6 +66,7 @@
 #include "menu_userport.h"
 #include "menu_video.h"
 #include "resources.h"
+#include "tapeport.h"
 #include "ui.h"
 #include "uifonts.h"
 #include "uimenu.h"
@@ -89,7 +91,11 @@ static UI_MENU_CALLBACK(pause_callback_wrapper);
 
 static UI_MENU_CALLBACK(Machine_dynmenu_callback)
 {
+    int has_iec = c64iec_get_active_state();
+
     c64_create_machine_menu();
+
+    uidrive_menu_create(has_iec);
 
     return MENU_SUBMENU_STRING;
 }
@@ -253,6 +259,9 @@ int c64scui_init_early(void)
  */
 int c64scui_init(void)
 {
+    int has_iec = c64iec_get_active_state();
+    int has_tapeport = tapeport_get_active_state();
+
 #ifdef SDL_DEBUG
     fprintf(stderr, "%s\n", __func__);
 #endif
@@ -263,7 +272,8 @@ int c64scui_init(void)
     uiuserport_menu_create(1);
     uisampler_menu_create();
     uicart_menu_create();
-    uidrive_menu_create();
+    uidrive_menu_create(has_iec);
+    uitape_menu_create(has_tapeport);
     uikeyboard_menu_create();
     uipalette_menu_create("VICII", NULL);
     uisid_menu_create();
@@ -275,9 +285,7 @@ int c64scui_init(void)
     sdl_ui_font_init(C64_CHARGEN_NAME, 0, 0x800, 0);
     sdl_vkbd_set_vkbd(&vkbd_c64);
 
-#ifdef HAVE_FFMPEG
     sdl_menu_ffmpeg_init();
-#endif
 
     uistatusbar_realize();
     return 0;
@@ -304,8 +312,7 @@ void c64scui_shutdown(void)
     sdl_menu_ethernet_interface_free();
 #endif
 
-#ifdef HAVE_FFMPEG
     sdl_menu_ffmpeg_shutdown();
-#endif
+
     sdl_ui_font_shutdown();
 }

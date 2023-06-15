@@ -11,6 +11,9 @@
 # -- compyx, 2020-02-08
 
 SUBDIRS = hwsiddrv mididrv socketdrv sounddrv
+if !USE_HEADLESSUI
+SUBDIRS += hotkeys
+endif
 
 AM_CPPFLAGS = \
 	@VICE_CPPFLAGS@ \
@@ -120,8 +123,17 @@ libarchdep_a_SOURCES = \
 	dynlib.c \
 	rawnetarch.c \
 	rs232dev.c \
-	signals.c \
-	uiactions.c
+	signals.c
+
+if USE_SDLUI
+libarchdep_a_SOURCES += uiactions.c
+endif
+if USE_SDL2UI
+libarchdep_a_SOURCES += uiactions.c
+endif
+if USE_GTK3UI
+libarchdep_a_SOURCES += uiactions.c
+endif
 
 if UNIX_COMPILE
 libarchdep_a_SOURCES += \

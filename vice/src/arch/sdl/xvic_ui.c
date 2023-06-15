@@ -274,7 +274,8 @@ int vic20ui_init(void)
     uijoystick_menu_create(1, 0, 1, 1, 1, 0);
     uiuserport_menu_create(1);
     uisampler_menu_create();
-    uidrive_menu_create();
+    uidrive_menu_create(1);
+    uitape_menu_create(1);
     uikeyboard_menu_create();
     uipalette_menu_create("VIC", NULL);
     uisid_menu_create();
@@ -284,9 +285,7 @@ int vic20ui_init(void)
     sdl_ui_font_init(VIC20_CHARGEN_NAME, 0, 0x800, 0);
     sdl_vkbd_set_vkbd(&vkbd_vic20);
 
-#ifdef HAVE_FFMPEG
     sdl_menu_ffmpeg_init();
-#endif
 
     uistatusbar_realize();
     return 0;
@@ -312,9 +311,7 @@ void vic20ui_shutdown(void)
     sdl_menu_ethernet_interface_free();
 #endif
 
-#ifdef HAVE_FFMPEG
     sdl_menu_ffmpeg_shutdown();
-#endif
 
     sdl_ui_font_shutdown();
 }

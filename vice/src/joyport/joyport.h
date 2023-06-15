@@ -34,6 +34,9 @@
 
 #define JOYPORT_ID_UNKNOWN             -1   /* used with joyport_display_joyport() */
 
+/* IMPORTANT: Do NOT put #ifdef's in this enum,
+              Do NOT change the order of the ID's,
+              Add new devices at the end, before JOYPORT_MAX_DEVICES */
 enum {
     JOYPORT_ID_NONE = 0,    /* CAUTION: some code relies on this being 0 */
     JOYPORT_ID_JOYSTICK,
@@ -113,6 +116,9 @@ enum {
 
 #define JOYPORT_POT_REQUIRED   0
 #define JOYPORT_POT_OPTIONAL   1
+
+#define JOYPORT_5VDC_NOT_NEEDED   0
+#define JOYPORT_5VDC_REQUIRED     1
 
 enum {
     JOYSTICK_ADAPTER_ID_NONE = 0,
@@ -235,12 +241,22 @@ enum {
 
 #define JOYPORT_BIT_SHIFT(var, from, to) ((var & (1 << from)) ? (1 << to) : 0)
 
+/* this structure is used to init all the joystick devices */
+typedef struct joyport_init_s {
+    int device_id;                                         /* device ID */
+    int emu_mask;                                          /* which emulator does the device work on */
+    int (*joyport_device_resources_init)(void);            /* device resources init function */
+    void (*joyport_device_resources_shutdown)(void);       /* device resources shutdown function */
+    int (*joyport_device_cmdline_options_init)(void);      /* device cmdline init function */
+} joyport_init_t;
+
 /* this structure is used for control port devices */
 typedef struct joyport_s {
     char *name;                                            /* name of the device */
     int resource_id;                                       /* type of device, to determine if there can be multiple instances of the type of device */
     int is_lp;                                             /* flag to indicate the device is a lightpen */
     int pot_optional;                                      /* flag to indicate that the device can work without a potentiometer */
+    int needs_5v;                                          /* flag to indicate the device needs the +5VDC line to work */
     int joystick_adapter_id;                               /* flag to indicate that the device is a joystick/pad adapter */
     int device_type;                                       /* device type */
     uint8_t output_bits;                                   /* flag to indicate which bits are output */
@@ -269,6 +285,7 @@ typedef struct joyport_port_props_s {
     int has_lp_support;      /* flag to indicate that the port has lightpen support */
     int has_adapter_support; /* flag to indicate that the port can handle joystick adapters */
     int has_output_support;  /* flag to indicate that the port has output support */
+    int has_5vdc_support;    /* flag to indicate that the port has a +5VDC line */
     int active;              /* flag to indicate if the port is currently active */
 } joyport_port_props_t;
 
@@ -322,6 +339,7 @@ void set_joyport_pot_mask(int mask);
 void joyport_powerup(void);
 
 int joyport_resources_init(void);
+void joyport_resources_shutdown(void);
 int joyport_cmdline_options_init(void);
 
 int joyport_port_register(int port, joyport_port_props_t *props);
@@ -344,7 +362,7 @@ uint8_t joystick_adapter_activate(uint8_t id, char *name);
 void joystick_adapter_deactivate(void);
 int joystick_adapter_is_snes(void);
 
-void joystick_adapter_set_ports(int ports);
+void joystick_adapter_set_ports(int ports, int has_5vdc);
 int joystick_adapter_get_ports(void);
 void joystick_adapter_set_add_ports(int ports);
 void joystick_adapter_set_output_check_function(int (*function)(int port, uint8_t bits));

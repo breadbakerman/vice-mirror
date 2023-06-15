@@ -72,6 +72,7 @@
 
 static void crtc_raster_draw_alarm_handler(CLOCK offset, void *data);
 #if CRTC_BEAM_RACING
+inline void crtc_fetch_prefetch(void);
 static void crtc_adjusted_retrace_alarm_handler(CLOCK offset, void *data);
 #endif
 
@@ -415,9 +416,11 @@ void crtc_set_hw_options(int hwflag, int vmask, int vchar, int vcoffset,
 {
     /* printf("crtc_set_hw_options(hwflag:%02x vmask:%02x vchar:%02x vcoffset:%02x vrevmask:%02x)\n",
            hwflag, vmask, vchar, vcoffset, vrevmask); */
-    crtc.hw_cursor = hwflag & 1;
-    crtc.hw_cols = (hwflag & 2) ? 2 : 1;
+    crtc.hw_cursor = hwflag & CRTC_HW_CURSOR;
+    crtc.hw_cols = (hwflag & CRTC_HW_DOUBLE_CHARS) ? 2 : 1;
     crtc.vaddr_mask = vmask;
+    crtc.vaddr_mask_eff = (hwflag & CRTC_HW_DOUBLE_CHARS) ? (vmask << 1) | 1
+                                                          : vmask;
     crtc.vaddr_charswitch = vchar;
     crtc.vaddr_charoffset = vcoffset << 4; /* times the number of bytes/char */
     crtc.vaddr_revswitch = vrevmask;
@@ -769,6 +772,7 @@ static void crtc_raster_draw_alarm_handler(CLOCK offset, void *data)
                 crtc.raster.ycounter &= 0x1f;
             } else {
                 crtc.raster.ycounter = 0;
+                crtc.cursor_lines = 0;
                 crtc.current_charline++;
                 crtc.current_charline &= 0x7f;
 
@@ -800,9 +804,7 @@ static void crtc_raster_draw_alarm_handler(CLOCK offset, void *data)
         }
 #if CRTC_BEAM_RACING
         if (new_venable) {
-            memcpy(&crtc.prefetch[0],
-                   &crtc.screen_base[crtc.screen_rel],
-                   crtc.rl_visible * crtc.hw_cols);
+            crtc_fetch_prefetch();
         }
 #endif /* CRTC_BEAM_RACING */
     }
@@ -877,6 +879,34 @@ static void crtc_raster_draw_alarm_handler(CLOCK offset, void *data)
 }
 
 #if CRTC_BEAM_RACING
+
+inline void crtc_fetch_prefetch(void)
+{
+    const int length = crtc.rl_visible * crtc.hw_cols;
+    const int start = crtc.screen_rel & crtc.vaddr_mask_eff;
+    const int end = start + length;
+    const int limit = crtc.vaddr_mask_eff + 1;
+
+    if (end <= limit) {
+        /* The usual case */
+        memcpy(&crtc.prefetch[0],
+               &crtc.screen_base[start],
+               length);
+    } else {
+        /* Handle address wraparound */
+        const int length1 = limit - start;
+        const int length2 = end - limit;
+        /* const int length1 = length - length2; */
+
+        memcpy(&crtc.prefetch[0],
+               &crtc.screen_base[start],
+               length1);
+        memcpy(&crtc.prefetch[length1],
+               &crtc.screen_base[0],
+               length2);
+    }
+}
+
 /*
  * Handle the beginning and end of the retrace period on non-CRTC hardware.
  * It starts just after the last text position and ends exactly 3*20 scan line
@@ -933,7 +963,7 @@ void crtc_update_prefetch(uint16_t addr, uint8_t value)
     }
 #if SNOW
     /* snow ... */
-    int beampos = (maincpu_clk - crtc.rl_start) * crtc.hw_cols;
+    int beampos = (int)(maincpu_clk - crtc.rl_start) * crtc.hw_cols;
     int width =  crtc.rl_visible * crtc.hw_cols;
 
     if (beampos >= 0 && beampos < width) {

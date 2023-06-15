@@ -5,6 +5,7 @@ AM_CPPFLAGS = \
 	@VICE_CPPFLAGS@ \
 	@ARCH_INCLUDES@ \
 	-I$(top_srcdir)/src/arch/shared \
+	-I$(top_srcdir)/src/arch/shared/hotkeys \
 	-I$(top_builddir)/src \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/drive \
@@ -37,7 +38,6 @@ noinst_LIBRARIES = libbasewidgets.a
 libbasewidgets_a_SOURCES = \
 	basedialogs.c \
 	carthelpers.c \
-	cartimagewidget.c \
 	cartridgewidgets.c \
 	clockportdevicewidget.c \
 	csshelpers.c \
@@ -68,7 +68,6 @@ EXTRA_DIST = \
 	basewidget_types.h \
 	basewidgets.h \
 	carthelpers.h \
-	cartimagewidget.h \
 	cartridgewidgets.h \
 	clockportdevicewidget.h \
 	csshelpers.h \

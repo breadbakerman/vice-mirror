@@ -262,7 +262,8 @@ int cbm2ui_init(void)
     uikeyboard_menu_create();
     uipalette_menu_create("Crtc", NULL);
     uisid_menu_create();
-    uidrive_menu_create();
+    uidrive_menu_create(1);
+    uitape_menu_create(1);
 
     sdl_ui_set_menu_params = cbm2ui_set_menu_params;
     sdl_ui_set_main_menu(xcbm6x0_7x0_main_menu);
@@ -270,9 +271,7 @@ int cbm2ui_init(void)
 
     sdl_vkbd_set_vkbd(&vkbd_cbm2);
 
-#ifdef HAVE_FFMPEG
     sdl_menu_ffmpeg_init();
-#endif
 
     uistatusbar_realize();
     return 0;
@@ -284,9 +283,8 @@ void cbm2ui_shutdown(void)
     fprintf(stderr, "%s\n", __func__);
 #endif
 
-#ifdef HAVE_FFMPEG
     sdl_menu_ffmpeg_shutdown();
-#endif
+
     uisound_output_menu_shutdown();
     uikeyboard_menu_shutdown();
     uipalette_menu_shutdown();

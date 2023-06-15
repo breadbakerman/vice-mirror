@@ -60,6 +60,7 @@
 #include "network.h"
 #include "palette.h"
 #include "printer.h"
+#include "profiler.h"
 #include "resources.h"
 #include "romset.h"
 #include "screenshot.h"
@@ -70,6 +71,7 @@
 #include "types.h"
 #include "uiapi.h"
 #include "uiactions.h"
+#include "uihotkeys.h"
 #include "util.h"
 #include "video.h"
 #include "vsync.h"
@@ -375,11 +377,16 @@ void machine_shutdown(void)
 
     machine_maincpu_shutdown();
 
+    profile_shutdown();
+
     video_shutdown();
 
     if (!console_mode) {
         ui_shutdown();
+#ifndef USE_HEADLESSUI
         ui_actions_shutdown();
+        ui_hotkeys_shutdown();
+#endif
     }
 
     palette_shutdown();

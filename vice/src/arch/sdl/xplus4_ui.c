@@ -83,6 +83,13 @@ static UI_MENU_CALLBACK(toggle_TEDShowStatusbar_callback)
 
 static UI_MENU_CALLBACK(pause_callback_wrapper);
 
+static UI_MENU_CALLBACK(Machine_dynmenu_callback)
+{
+    plus4_create_machine_menu();
+
+    return MENU_SUBMENU_STRING;
+}
+
 static ui_menu_entry_t xplus4_main_menu[] = {
     { "Autostart image",
       MENU_ENTRY_DIALOG,
@@ -106,7 +113,7 @@ static ui_menu_entry_t xplus4_main_menu[] = {
       (ui_callback_data_t)printer_iec_nouserport_menu },
     { "Machine settings",
       MENU_ENTRY_SUBMENU,
-      submenu_callback,
+      Machine_dynmenu_callback,
       (ui_callback_data_t)plus4_hardware_menu },
     { "Video settings",
       MENU_ENTRY_SUBMENU,
@@ -251,7 +258,8 @@ int plus4ui_init(void)
     uijoyport_menu_create(1, 1, 1, 1, 1, 1);
     uijoystick_menu_create(1, 1, 1, 1, 1, 1);
     uiuserport_menu_create(0);
-    uidrive_menu_create();
+    uidrive_menu_create(1);
+    uitape_menu_create(1);
     uikeyboard_menu_create();
     uipalette_menu_create("TED", NULL);
     uisid_menu_create();
@@ -261,9 +269,7 @@ int plus4ui_init(void)
     sdl_ui_font_init(PLUS4_KERNAL_PAL_REV5_NAME, 0x1000, 0x1400, 0);
     sdl_vkbd_set_vkbd(&vkbd_plus4);
 
-#ifdef HAVE_FFMPEG
     sdl_menu_ffmpeg_init();
-#endif
 
     uistatusbar_realize();
     return 0;
@@ -284,9 +290,7 @@ void plus4ui_shutdown(void)
     fprintf(stderr, "%s\n", __func__);
 #endif
 
-#ifdef HAVE_FFMPEG
     sdl_menu_ffmpeg_shutdown();
-#endif
 
     sdl_ui_font_shutdown();
 }

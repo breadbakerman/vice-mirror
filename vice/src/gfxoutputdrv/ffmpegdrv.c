@@ -107,7 +107,7 @@ static gfxoutputdrv_codec_t none_codeclist[] = {
 
 /* formatlist is filled from with available formats and codecs at init time */
 gfxoutputdrv_format_t *ffmpegdrv_formatlist = NULL;
-gfxoutputdrv_format_t formats_to_test[] =
+static gfxoutputdrv_format_t formats_to_test[] =
 {
     { "mp4", mp4_audio_codeclist, mp4_video_codeclist },
     { "ogg", ogg_audio_codeclist, ogg_video_codeclist },
@@ -1019,7 +1019,7 @@ static void ffmpegdrv_shutdown(void);
 
 static gfxoutputdrv_t ffmpeg_drv = {
     "FFMPEG",
-    "FFMPEG",
+    "FFMPEG (Library)",
     NULL,
     NULL, /* filled in ffmpeg_get_formats_and_codecs */
     NULL, /* open */

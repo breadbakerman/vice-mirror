@@ -772,6 +772,7 @@ static joyport_t joystick_device = {
     JOYPORT_RES_ID_NONE,            /* device doesn't have a class, multiple devices of this kind can be active at the same time */
     JOYPORT_IS_NOT_LIGHTPEN,        /* device is NOT a lightpen */
     JOYPORT_POT_OPTIONAL,           /* device does NOT use the potentiometer lines */
+    JOYPORT_5VDC_NOT_NEEDED,        /* device does NOT need +5VDC to work */
     JOYSTICK_ADAPTER_ID_NONE,       /* device is NOT a joystick adapter */
     JOYPORT_DEVICE_JOYSTICK,        /* device is a Joystick */
     0,                              /* NO output bits */
@@ -787,7 +788,7 @@ static joyport_t joystick_device = {
     0                               /* NO device hook function mask */
 };
 
-static int joystick_joyport_register(void)
+int joystick_joyport_register(void)
 {
     return joyport_device_register(JOYPORT_ID_JOYSTICK, &joystick_device);
 }
@@ -1966,10 +1967,6 @@ static resource_string_t resources_string[] = {
  */
 int joystick_resources_init(void)
 {
-    if (joystick_joyport_register() < 0) {
-        return -1;
-    }
-
 #ifdef COMMON_JOYKEYS
     if (resources_register_int(joykeys_resources_int) < 0) {
         return -1;

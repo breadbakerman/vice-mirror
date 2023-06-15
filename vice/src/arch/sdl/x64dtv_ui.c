@@ -242,7 +242,7 @@ int c64dtvui_init(void)
     uijoystick_menu_create(1, 1, 1, 1, 1, 0);
     uiuserport_menu_create(0);
     uisampler_menu_create();
-    uidrive_menu_create();
+    uidrive_menu_create(1);
     uikeyboard_menu_create();
     uisid_menu_create();
     uimedia_menu_create();
@@ -251,9 +251,7 @@ int c64dtvui_init(void)
     sdl_ui_font_init(C64_CHARGEN_NAME, 0, 0x800, 0);
     sdl_vkbd_set_vkbd(&vkbd_c64dtv);
 
-#ifdef HAVE_FFMPEG
     sdl_menu_ffmpeg_init();
-#endif
 
     uistatusbar_realize();
     return 0;
@@ -272,8 +270,7 @@ void c64dtvui_shutdown(void)
     fprintf(stderr,"%s\n",__func__);
 #endif
 
-#ifdef HAVE_FFMPEG
     sdl_menu_ffmpeg_shutdown();
-#endif
+
     sdl_ui_font_shutdown();
 }

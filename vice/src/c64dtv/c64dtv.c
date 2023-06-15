@@ -263,6 +263,7 @@ static joyport_port_props_t control_port_1 =
     0,                  /* has NO lightpen support on this port */
     1,                  /* has joystick adapter on this port */
     1,                  /* has output support on this port */
+    0,                  /* The c64dtv works with 3.3v, so no +5vdc line on this port */
     1                   /* port is always active */
 };
 
@@ -273,6 +274,7 @@ static joyport_port_props_t control_port_2 =
     0,                  /* has NO lightpen support on this port */
     1,                  /* has joystick adapter on this port */
     1,                  /* has output support on this port */
+    0,                  /* The c64dtv works with 3.3v, so no +5vdc line on this port */
     1                   /* port is always active */
 };
 
@@ -283,6 +285,7 @@ static joyport_port_props_t joy_adapter_control_port_1 =
     0,                  /* has NO lightpen support on this port */
     0,                  /* has NO joystick adapter on this port */
     1,                  /* has output support on this port */
+    0,                  /* default for joystick adapter ports is NO +5vdc line on this port, can be changed by the joystick adapter when activated */
     0                   /* port can be switched on/off */
 };
 
@@ -293,6 +296,7 @@ static joyport_port_props_t joy_adapter_control_port_2 =
     0,                  /* has NO lightpen support on this port */
     0,                  /* has NO joystick adapter on this port */
     1,                  /* has output support on this port */
+    0,                  /* default for joystick adapter ports is NO +5vdc line on this port, can be changed by the joystick adapter when activated */
     0                   /* port can be switched on/off */
 };
 
@@ -303,6 +307,7 @@ static joyport_port_props_t joy_adapter_control_port_3 =
     0,                  /* has NO lightpen support on this port */
     0,                  /* has NO joystick adapter on this port */
     1,                  /* has output support on this port */
+    0,                  /* default for joystick adapter ports is NO +5vdc line on this port, can be changed by the joystick adapter when activated */
     0                   /* port can be switched on/off */
 };
 
@@ -313,6 +318,7 @@ static joyport_port_props_t joy_adapter_control_port_4 =
     0,                  /* has NO lightpen support on this port */
     0,                  /* has NO joystick adapter on this port */
     1,                  /* has output support on this port */
+    0,                  /* default for joystick adapter ports is NO +5vdc line on this port, can be changed by the joystick adapter when activated */
     0                   /* port can be switched on/off */
 };
 
@@ -323,6 +329,7 @@ static joyport_port_props_t joy_adapter_control_port_5 =
     0,                  /* has NO lightpen support on this port */
     0,                  /* has NO joystick adapter on this port */
     1,                  /* has output support on this port */
+    0,                  /* default for joystick adapter ports is NO +5vdc line on this port, can be changed by the joystick adapter when activated */
     0                   /* port can be switched on/off */
 };
 
@@ -333,6 +340,7 @@ static joyport_port_props_t joy_adapter_control_port_6 =
     0,                  /* has NO lightpen support on this port */
     0,                  /* has NO joystick adapter on this port */
     1,                  /* has output support on this port */
+    0,                  /* default for joystick adapter ports is NO +5vdc line on this port, can be changed by the joystick adapter when activated */
     0                   /* port can be switched on/off */
 };
 
@@ -343,6 +351,7 @@ static joyport_port_props_t joy_adapter_control_port_7 =
     0,                  /* has NO lightpen support on this port */
     0,                  /* has NO joystick adapter on this port */
     1,                  /* has output support on this port */
+    0,                  /* default for joystick adapter ports is NO +5vdc line on this port, can be changed by the joystick adapter when activated */
     0                   /* port can be switched on/off */
 };
 
@@ -353,6 +362,7 @@ static joyport_port_props_t joy_adapter_control_port_8 =
     0,                  /* has NO lightpen support on this port */
     0,                  /* has NO joystick adapter on this port */
     1,                  /* has output support on this port */
+    0,                  /* default for joystick adapter ports is NO +5vdc line on this port, can be changed by the joystick adapter when activated */
     0                   /* port can be switched on/off */
 };
 
@@ -440,62 +450,6 @@ int machine_resources_init(void)
         init_resource_fail("joyport devices");
         return -1;
     }
-    if (joyport_sampler2bit_resources_init() < 0) {
-        init_resource_fail("joyport 2bit sampler");
-        return -1;
-    }
-    if (joyport_sampler4bit_resources_init() < 0) {
-        init_resource_fail("joyport 4bit sampler");
-        return -1;
-    }
-    if (joyport_bbrtc_resources_init() < 0) {
-        init_resource_fail("joyport bbrtc");
-        return -1;
-    }
-    if (joyport_paperclip64_resources_init() < 0) {
-        init_resource_fail("joyport paperclip64 dongle");
-        return -1;
-    }
-    if (joyport_paperclip64e_resources_init() < 0) {
-        init_resource_fail("joyport paperclip64e dongle");
-        return -1;
-    }
-    if (joyport_paperclip64sc_resources_init() < 0) {
-        init_resource_fail("joyport paperclip64sc dongle");
-        return -1;
-    }
-    if (joyport_paperclip2_resources_init() < 0) {
-        init_resource_fail("joyport paperclip2 dongle");
-        return -1;
-    }
-    if (joyport_coplin_keypad_resources_init() < 0) {
-        init_resource_fail("joyport coplin keypad");
-        return -1;
-    }
-    if (joyport_rushware_keypad_resources_init() < 0) {
-        init_resource_fail("joyport rushware keypad");
-        return -1;
-    }
-    if (joyport_trapthem_snespad_resources_init() < 0) {
-        init_resource_fail("joyport trapthem snespad");
-        return -1;
-    }
-    if (joyport_ninja_snespad_resources_init() < 0) {
-        init_resource_fail("joyport ninja snespad");
-        return -1;
-    }
-    if (joyport_protopad_resources_init() < 0) {
-        init_resource_fail("joyport protopad");
-        return -1;
-    }
-    if (joyport_inception_resources_init() < 0) {
-        init_resource_fail("joyport inception");
-        return -1;
-    }
-    if (joyport_multijoy_resources_init() < 0) {
-        init_resource_fail("joyport multijoy");
-        return -1;
-    }
     if (joystick_resources_init() < 0) {
         init_resource_fail("joystick");
         return -1;
@@ -567,10 +521,6 @@ int machine_resources_init(void)
         init_resource_fail("userport I/O simulation");
         return -1;
     }
-    if (joyport_io_sim_resources_init() < 0) {
-        init_resource_fail("joyport I/O simulation");
-        return -1;
-    }
     if (debugcart_resources_init() < 0) {
         init_resource_fail("debug cart");
         return -1;
@@ -591,8 +541,8 @@ void machine_resources_shutdown(void)
     fsdevice_resources_shutdown();
     disk_image_resources_shutdown();
     sampler_resources_shutdown();
-    joyport_bbrtc_resources_shutdown();
     debugcart_resources_shutdown();
+    joyport_resources_shutdown();
 }
 
 /* C64DTV-specific command-line option initialization.  */
@@ -636,10 +586,6 @@ int machine_cmdline_options_init(void)
     }
     if (joyport_cmdline_options_init() < 0) {
         init_cmdline_options_fail("joyport");
-        return -1;
-    }
-    if (joyport_bbrtc_cmdline_options_init() < 0) {
-        init_cmdline_options_fail("bbrtc");
         return -1;
     }
     if (joystick_cmdline_options_init() < 0) {

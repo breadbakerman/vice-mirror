@@ -49,9 +49,10 @@
      4   |      D3
      6   |      D4
 
-   Works on:
-   - native joystick port(s) (x64/x64sc/xscpu64/x64dtv/x128/xcbm5x0/xvic)
+   Note that +5VDC is provided for the 8 joystick ports.
 
+   Works on:
+   - native joystick port(s) (x64/x64sc/xscpu64/x128/xvic/xcbm5x0)
  */
 
 static int inception_enabled = 0;
@@ -76,7 +77,9 @@ static int joyport_inception_set_enabled(int port, int enabled)
         /* enabled, activate joystick adapter, clear counter and set extra joy ports to 8 */
         joystick_adapter_activate(JOYSTICK_ADAPTER_ID_INCEPTION, joyport_inception_device.name);
         counter = 0;
-        joystick_adapter_set_ports(8);
+
+        /* Enable 8 extra joystick ports, with +5VDC support */
+        joystick_adapter_set_ports(8, 1);
     } else {
         /* disabled, deactivate joystick adapter */
         joystick_adapter_deactivate();
@@ -222,6 +225,7 @@ static joyport_t joyport_inception_device = {
     JOYPORT_RES_ID_NONE,              /* device can be used in multiple ports at the same time */
     JOYPORT_IS_NOT_LIGHTPEN,          /* device is NOT a lightpen */
     JOYPORT_POT_OPTIONAL,             /* device does NOT use the potentiometer lines */
+    JOYPORT_5VDC_REQUIRED,            /* device NEEDS +5VDC to work */
     JOYSTICK_ADAPTER_ID_INCEPTION,    /* device is a joystick adapter */
     JOYPORT_DEVICE_JOYSTICK_ADAPTER,  /* device is a Joystick adapter */
     0x1F,                             /* bits 4, 3, 2, 1 and 0 are output bits */

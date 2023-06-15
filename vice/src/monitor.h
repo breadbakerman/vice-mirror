@@ -140,6 +140,7 @@ struct monitor_interface_s {
 
     uint8_t (*mem_bank_read)(int bank, uint16_t addr, void *context);
     uint8_t (*mem_bank_peek)(int bank, uint16_t addr, void *context);
+    uint8_t (*mem_peek_with_config)(int config, uint16_t addr, void *context);
     void (*mem_bank_write)(int bank, uint16_t addr, uint8_t byte, void *context);
     void (*mem_bank_poke)(int bank, uint16_t addr, uint8_t byte, void *context);
 
@@ -186,6 +187,7 @@ void monitor_check_icount_interrupt(void);
 void monitor_check_watchpoints(unsigned int lastpc, unsigned int pc);
 
 void monitor_cpu_type_set(const char *cpu_type);
+void monitor_cpu_type_set_value(int searchcpu);
 
 void monitor_watch_push_load_addr(uint16_t addr, MEMSPACE mem);
 void monitor_watch_push_store_addr(uint16_t addr, MEMSPACE mem);
@@ -208,9 +210,10 @@ int monitor_check_breakpoints(MEMSPACE mem, uint16_t addr);
 /** Disassemble interace */
 /* Prototypes */
 const char *mon_disassemble_to_string(MEMSPACE, unsigned int addr, unsigned int x,
-                                      unsigned int p1, unsigned int p2, unsigned int p3,
-                                      int hex_mode,
-                                      const char *cpu_type);
+                                             unsigned int p1, unsigned int p2, unsigned int p3,
+                                             int hex_mode,
+                                             const char *cpu_type);
+unsigned mon_disassemble_oneline(MEMSPACE memspace, uint16_t mem_config, uint16_t addr);
 
 /** Register interface.  */
 struct mon_reg_list_s *mon_register_list_get(int mem);

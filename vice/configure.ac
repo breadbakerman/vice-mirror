@@ -141,7 +141,7 @@ VICE_ARG_ENABLE_LIST(optimization,      [  --disable-optimization  disable code 
 VICE_ARG_ENABLE_LIST(extra-warnings,    [  --enable-extra-warnings enable anal warnings [[default=no]]])
 VICE_ARG_ENABLE_LIST(io-simulation,     [  --enable-io-simulation  enable i/o simulation devices [[default=no]]])
 
-dnl Temporary for something mysterious
+dnl Needed for WIC64
 VICE_ARG_WITH_LIST(libcurl,             [  --with-libcurl          enable libcurl support [[default=no]]])
 
 dnl
@@ -329,6 +329,8 @@ m4_foreach([flag],
             ])
 AC_SUBST(MONITOR_CFLAGS)
 
+AC_PROG_AWK
+AS_IF([test x"$AWK" = "x:"], [AC_MSG_ERROR([Could not find awk!])])
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_LEX
@@ -492,7 +494,6 @@ USE_DESKTOP_FILES="no "
 HAVE_X64_IMAGE_SUPPORT="no "
 HAVE_CAPABILITIES_SUPPORT="no "
 HAVE_LIBCURL_SUPPORT="no "
-
 
 dnl Why do we have this?
 AM_CONDITIONAL(DUMMY_COMPILE, false)
@@ -1153,7 +1154,6 @@ if test x"$enable_openmp" != "xno"; then
     fi
   fi
 fi
-
 
 dnl Check for threading code debugging
 AM_CONDITIONAL(HAVE_DEBUG_THREADS, test x"$enable_debug_threads" = "xyes")
@@ -2160,7 +2160,7 @@ fi
 AC_SUBST(ZLIB_LIBS)
 
 
-dnl --- Curl ---
+dnl --- Curl / WIC64 ---
 if test x"$with_libcurl" = "xyes"; then
   PKG_CHECK_MODULES(libcurl, [libcurl], [have_libcurl=yes], [have_libcurl=no])
   if test x"$have_libcurl" = "xno"; then
@@ -2172,7 +2172,6 @@ if test x"$with_libcurl" = "xyes"; then
   LIBS="$LIBS $libcurl_LIBS"
   AC_DEFINE(HAVE_LIBCURL, , [libcurl support])
 fi
-
 
 dnl ----- Netplay Support -----
 NETPLAY_LIBS=
@@ -3541,6 +3540,7 @@ AC_OUTPUT([Makefile
            src/arch/sdl/Makefile
            src/arch/headless/Makefile
            src/arch/shared/Makefile
+           src/arch/shared/hotkeys/Makefile
            src/arch/shared/hwsiddrv/Makefile
            src/arch/shared/mididrv/Makefile
            src/arch/shared/socketdrv/Makefile

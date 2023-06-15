@@ -48,6 +48,7 @@
 #include "log.h"
 #include "machine.h"
 #include "maincpu.h"
+#include "mainlock.h"
 #include "monitor.h"
 #include "resources.h"
 #include "sound.h"
@@ -142,7 +143,7 @@ static const sound_register_devices_t sound_register_devices[] = {
 #endif
 
     { "soundmovie", "Movie sound recording", sound_init_movie_device, SOUND_MOVIE_RECORD_DEVICE },
-    { NULL, NULL, 0 }
+    { NULL, NULL, NULL, 0 }
 };
 
 /* ------------------------------------------------------------------------- */
@@ -1438,6 +1439,19 @@ bool sound_flush(void)
 {
     int c, i, nr, space;
     char *state;
+
+    /*
+     * It's possible when changing settings via UI to end up
+     * flushing sound on the ui thread, which is a problem
+     * because it will 'yield' the mainlock during the flush.
+     *
+     * The 'yield' mechanism is build to only work when the
+     * the vice thread is yielding to the ui thread, so the
+     * result is that the ui thread hangs forever.
+     */
+
+    if (!mainlock_is_vice_thread())
+        goto done;
 
     if (!playback_enabled) {
         if (sdev_open) {

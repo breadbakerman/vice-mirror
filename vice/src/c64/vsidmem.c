@@ -444,6 +444,11 @@ void mem_read_base_set(unsigned int base, unsigned int index, uint8_t *mem_ptr)
     mem_read_base_tab[base][index] = mem_ptr;
 }
 
+void mem_read_limit_set(unsigned int base, unsigned int index, uint32_t limit)
+{
+    mem_read_limit_tab[base][index] = limit;
+}
+
 void mem_initialize_memory(void)
 {
     int i, j, k;
@@ -452,7 +457,7 @@ void mem_initialize_memory(void)
     mem_color_ram_cpu = mem_color_ram;
     mem_color_ram_vicii = mem_color_ram;
 
-    mem_limit_init(mem_read_limit_tab);
+    mem_limit_init();
 
     /* setup watchpoint tables */
     mem_read_tab_watch[0] = zero_read_watch;
@@ -885,6 +890,16 @@ uint8_t mem_bank_peek(int bank, uint16_t addr, void *context)
     }
     return mem_bank_read(bank, addr, context);
 }
+
+int mem_get_current_bank_config(void) {
+    return 0; /* TODO: not implemented yet */
+}
+
+uint8_t mem_peek_with_config(int config, uint16_t addr, void *context) {
+    /* TODO, config not implemented yet */
+    return mem_bank_peek(0 /* current */, addr, context);
+}
+
 
 void mem_bank_write(int bank, uint16_t addr, uint8_t byte, void *context)
 {
