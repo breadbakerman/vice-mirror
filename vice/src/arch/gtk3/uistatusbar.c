@@ -945,14 +945,7 @@ static gboolean ui_do_drive_popup(GtkWidget *widget, GdkEvent *event, gpointer d
     int action;
     int i = GPOINTER_TO_INT(data) & 0xff;
     int drive = GPOINTER_TO_INT(data) >> 8;
-
-    gint reset_ids[] = {
-        ACTION_RESET_DRIVE_8,
-        ACTION_RESET_DRIVE_9,
-        ACTION_RESET_DRIVE_10,
-        ACTION_RESET_DRIVE_11
-    };
-
+    int buttons;
 
     mainlock_assert_is_not_vice_thread();
 
@@ -1024,30 +1017,33 @@ static gboolean ui_do_drive_popup(GtkWidget *widget, GdkEvent *event, gpointer d
      * Add drive reset item
      */
     g_snprintf(buffer, sizeof(buffer), "Reset drive #%d", i + DRIVE_UNIT_MIN);
-    drive_menu_item = popup_menu_item_action_new(buffer, reset_ids[i]);
+    drive_menu_item = popup_menu_item_action_new(buffer,
+                                                 ui_action_id_drive_reset(i + DRIVE_UNIT_MIN));
     gtk_container_add(GTK_CONTAINER(drive_menu), drive_menu_item);
 
+    buttons = drive_has_buttons(i);
+
     /* Add reset to configuration mode for CMD HDs */
-    if ((drive_has_buttons(i) & 1) == 1) {
+    if ((buttons & DRIVE_BUTTON_WRITE_PROTECT) == DRIVE_BUTTON_WRITE_PROTECT) {
         g_snprintf(buffer, sizeof(buffer),
                    "Reset drive #%d to Configuration Mode",
                    i + DRIVE_UNIT_MIN);
         drive_menu_item = gtk_menu_item_new_with_label(buffer);
         g_signal_connect(drive_menu_item, "activate",
                          G_CALLBACK(on_drive_reset_config_clicked),
-                         GINT_TO_POINTER((i << 4) + 1));
+                         GINT_TO_POINTER((i << 4) + DRIVE_BUTTON_WRITE_PROTECT));
         gtk_container_add(GTK_CONTAINER(drive_menu), drive_menu_item);
     }
 
     /* Add reset to installation mode for CMD HDs */
-    if ((drive_has_buttons(i) & 6) == 6) {
+    if ((buttons & (DRIVE_BUTTON_SWAP_8|DRIVE_BUTTON_SWAP_9)) == (DRIVE_BUTTON_SWAP_8|DRIVE_BUTTON_SWAP_9)) {
         g_snprintf(buffer, sizeof(buffer),
                    "Reset drive #%d to Installation Mode",
                    i + DRIVE_UNIT_MIN);
         drive_menu_item = gtk_menu_item_new_with_label(buffer);
         g_signal_connect(drive_menu_item, "activate",
                          G_CALLBACK(on_drive_reset_config_clicked),
-                         GINT_TO_POINTER((i << 4) + 6));
+                         GINT_TO_POINTER((i << 4) + (DRIVE_BUTTON_SWAP_8|DRIVE_BUTTON_SWAP_9)));
         gtk_container_add(GTK_CONTAINER(drive_menu), drive_menu_item);
     }
 

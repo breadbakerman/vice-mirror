@@ -38,6 +38,7 @@
 #include <stdbool.h>
 
 #include "archdep.h"
+#include "drive.h"
 #include "lib.h"
 #include "log.h"
 #include "machine.h"
@@ -199,10 +200,19 @@ static const ui_action_info_private_t action_info_list[] = {
     /* reset items */
     { ACTION_RESET_SOFT,        "reset-soft",           "Soft-reset the machine",               VICE_MACHINE_ALL },
     { ACTION_RESET_HARD,        "reset-hard",           "Hard-reset the machine",               VICE_MACHINE_ALL },
-    { ACTION_RESET_DRIVE_8,     "reset-drive-8",        "Reset drive 8",                        VICE_MACHINE_ALL^VICE_MACHINE_VSID },
-    { ACTION_RESET_DRIVE_9,     "reset-drive-9",        "Reset drive 9",                        VICE_MACHINE_ALL^VICE_MACHINE_VSID },
-    { ACTION_RESET_DRIVE_10,    "reset-drive-10",       "Reset drive 10",                       VICE_MACHINE_ALL^VICE_MACHINE_VSID },
-    { ACTION_RESET_DRIVE_11,    "reset-drive-11",       "Reset drive 11",                       VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+
+    { ACTION_RESET_DRIVE_8,          "reset-drive-8",           "Reset drive 8",                        VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+    { ACTION_RESET_DRIVE_8_CONFIG,   "reset-drive-8-config",    "Reset drive 8 in configuration mode",  VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+    { ACTION_RESET_DRIVE_8_INSTALL,  "reset-drive-8-install",   "Reset drive 8 in installation mode",   VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+    { ACTION_RESET_DRIVE_9,          "reset-drive-9",           "Reset drive 9",                        VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+    { ACTION_RESET_DRIVE_9_CONFIG,   "reset-drive-9-config",    "Reset drive 9 in configuration mode",  VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+    { ACTION_RESET_DRIVE_9_INSTALL,  "reset-drive-9-install",   "Reset drive 9 in installation mode",   VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+    { ACTION_RESET_DRIVE_10,         "reset-drive-10",          "Reset drive 10",                       VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+    { ACTION_RESET_DRIVE_10_CONFIG,  "reset-drive-10-config",   "Reset drive 10 in configuration mode", VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+    { ACTION_RESET_DRIVE_10_INSTALL, "reset-drive-10-install",  "Reset drive 10 in installation mode",  VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+    { ACTION_RESET_DRIVE_11,         "reset-drive-11",          "Reset drive 11",                       VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+    { ACTION_RESET_DRIVE_11_CONFIG,  "reset-drive-11-config",   "Reset drive 11 in configuration mode", VICE_MACHINE_ALL^VICE_MACHINE_VSID },
+    { ACTION_RESET_DRIVE_11_INSTALL, "reset-drive-11-install",  "Reset drive 11 in installation mode",  VICE_MACHINE_ALL^VICE_MACHINE_VSID },
 
     /* quit emulator */
     { ACTION_QUIT,              "quit",                 "Quit emulator",                        VICE_MACHINE_ALL },
@@ -588,6 +598,27 @@ static const int drive_detach_ids[4][2] = {
     { ACTION_DRIVE_DETACH_11_0, ACTION_DRIVE_DETACH_11_1 }
 };
 
+static const int drive_reset_ids[4] = {
+    ACTION_RESET_DRIVE_8,
+    ACTION_RESET_DRIVE_9,
+    ACTION_RESET_DRIVE_10,
+    ACTION_RESET_DRIVE_11
+};
+
+static const int drive_reset_config_ids[4] = {
+    ACTION_RESET_DRIVE_8_CONFIG,
+    ACTION_RESET_DRIVE_9_CONFIG,
+    ACTION_RESET_DRIVE_10_CONFIG,
+    ACTION_RESET_DRIVE_11_CONFIG
+};
+
+static const int drive_reset_install_ids[4] = {
+    ACTION_RESET_DRIVE_8_INSTALL,
+    ACTION_RESET_DRIVE_9_INSTALL,
+    ACTION_RESET_DRIVE_10_INSTALL,
+    ACTION_RESET_DRIVE_11_INSTALL
+};
+
 
 /** \brief  Get action ID for a drive action
  *
@@ -722,6 +753,55 @@ int ui_action_id_drive_detach(int unit, int drive)
 }
 
 
+/** \brief  Get reset-drive action ID for unit
+ *
+ * \param[in]   unit    unit number (8-11)
+ *
+ * \return  action ID or `ACTION_NONE` for invalud \a unit
+ */
+int ui_action_id_drive_reset(int unit)
+{
+    if (unit >= DRIVE_UNIT_MIN && unit <= DRIVE_UNIT_MAX) {
+        return drive_reset_ids[unit - DRIVE_UNIT_MIN];
+    }
+    return ACTION_NONE;
+}
+
+
+/** \brief  Get reset-drive-config action ID for unit
+ *
+ * \param[in]   unit    unit number (8-11)
+ *
+ * \return  action ID or `ACTION_NONE` for invalud \a unit
+ */
+int ui_action_id_drive_reset_config(int unit)
+{
+    if (unit >= DRIVE_UNIT_MIN && unit <= DRIVE_UNIT_MAX) {
+        return drive_reset_config_ids[unit - DRIVE_UNIT_MIN];
+    }
+    return ACTION_NONE;
+}
+
+
+/** \brief  Get reset-drive-install action ID for unit
+ *
+ * \param[in]   unit    unit number (8-11)
+ *
+ * \return  action ID or `ACTION_NONE` for invalud \a unit
+ */
+int ui_action_id_drive_reset_install(int unit)
+{
+    if (unit >= DRIVE_UNIT_MIN && unit <= DRIVE_UNIT_MAX) {
+        return drive_reset_install_ids[unit - DRIVE_UNIT_MIN];
+    }
+    return ACTION_NONE;
+}
+
+
+/******************************************************************************
+ *                            UI action mappings                              *
+ *****************************************************************************/
+
 /** \brief  List of mappings of action IDs to handlers
  *
  * A simple array indexed by action ID
@@ -739,8 +819,10 @@ static bool dialog_active = false;
 /** \brief  UI action dispatch handler
  *
  * Function to trigger the action handler on the proper thread in a UI.
+ * This can remain `NULL` in which case the handler of an action is called
+ * directly on the thread that called ui_action_trigger().
  */
-static void (*dispatch_handler)(const ui_action_map_t *) = NULL;
+static void (*dispatch_handler)(ui_action_map_t *) = NULL;
 
 
 /** \brief  Find action mapping by action ID with valid handler
@@ -779,6 +861,7 @@ void ui_actions_init(void)
         /* explicitly initialize elements */
         map->action       = action; /* needed when passing a pointer into the array */
         map->handler      = NULL;
+        map->param        = NULL;
         map->blocks       = false;
         map->dialog       = false;
         map->uithread     = false;
@@ -800,8 +883,11 @@ void ui_actions_init(void)
  * \param[in]   dispatch    function to call with an action map as its argument
  *                          to have the UI actually invoke the handler on the
  *                          proper thread
+ *
+ * \note    Installing a dispatch handler is optional, when not installed an
+ *          action's handler is called directly by ui_action_trigger().
  */
-void ui_actions_set_dispatch(void (*dispatch)(const ui_action_map_t *))
+void ui_actions_set_dispatch(void (*dispatch)(ui_action_map_t *))
 {
     dispatch_handler = dispatch;
 }
@@ -812,6 +898,7 @@ void ui_actions_set_dispatch(void (*dispatch)(const ui_action_map_t *))
 void ui_actions_shutdown(void)
 {
 #if defined(USE_GTK3UI) || defined(USE_SDLUI) || defined(USE_SDL2UI)
+    /* NOP for now */
 #endif
 }
 
@@ -841,6 +928,7 @@ void ui_actions_register(const ui_action_map_t *mappings)
         entry = &action_mappings[map->action];
         entry->action   = map->action;
         entry->handler  = map->handler;
+        entry->param    = map->param;
         entry->blocks   = map->blocks;
         entry->dialog   = map->dialog;
         entry->uithread = map->uithread;
@@ -864,14 +952,7 @@ void ui_actions_register(const ui_action_map_t *mappings)
  */
 void ui_action_trigger(int action)
 {
-    ui_action_map_t *map;
-
-    if (dispatch_handler == NULL) {
-        log_error(LOG_ERR, "action handler dispatcher not installed.");
-        return;
-    }
-
-    map = find_action_map(action);
+    ui_action_map_t *map = find_action_map(action);
     if (map != NULL) {
        /* handle blocking actions */
         if (map->blocks) {
@@ -892,7 +973,12 @@ void ui_action_trigger(int action)
         }
 
         /* pass to dispatch handler */
-        dispatch_handler(map);
+        if (dispatch_handler != NULL) {
+            dispatch_handler(map);
+        } else {
+            /* default handler: trigger directly */
+            map->handler(map->param);
+        }
     } else {
         log_error(LOG_ERR, "no handler for action %d\n", action);
     }

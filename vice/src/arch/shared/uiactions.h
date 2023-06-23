@@ -55,7 +55,9 @@ typedef struct ui_action_map_s {
      * Action handler data
      */
 
-    void (*handler)(void);  /**< function handling the action */
+    void (*handler)(void*); /**< function handling the action */
+    void  *param;           /**< optional parameter for \c handler */
+
 
     /* modes */
     bool   blocks;          /**< action blocks (the same action cannot be
@@ -226,12 +228,20 @@ enum {
     ACTION_MOUSE_GRAB_TOGGLE,
     ACTION_PAUSE_TOGGLE,
     ACTION_QUIT,
-    ACTION_RESET_DRIVE_10,
-    ACTION_RESET_DRIVE_11,
-    ACTION_RESET_DRIVE_8,
-    ACTION_RESET_DRIVE_9,
     ACTION_RESET_HARD,
     ACTION_RESET_SOFT,
+    ACTION_RESET_DRIVE_8,
+    ACTION_RESET_DRIVE_8_CONFIG,
+    ACTION_RESET_DRIVE_8_INSTALL,
+    ACTION_RESET_DRIVE_9,
+    ACTION_RESET_DRIVE_9_CONFIG,
+    ACTION_RESET_DRIVE_9_INSTALL,
+    ACTION_RESET_DRIVE_10,
+    ACTION_RESET_DRIVE_10_CONFIG,
+    ACTION_RESET_DRIVE_10_INSTALL,
+    ACTION_RESET_DRIVE_11,
+    ACTION_RESET_DRIVE_11_CONFIG,
+    ACTION_RESET_DRIVE_11_INSTALL,
     ACTION_RESTORE_DISPLAY,
     ACTION_SCREENSHOT_QUICKSAVE,
     ACTION_SETTINGS_DEFAULT,
@@ -356,19 +366,22 @@ ui_action_info_t *      ui_action_get_info_list(void);
 bool                    ui_action_is_valid     (int action);
 
 /* Get action IDs for drive actions */
-int                     ui_action_id_fliplist_add     (int unit, int drive);
-int                     ui_action_id_fliplist_remove  (int unit, int drive);
-int                     ui_action_id_fliplist_next    (int unit, int drive);
-int                     ui_action_id_fliplist_previous(int unit, int drive);
-int                     ui_action_id_fliplist_clear   (int unit, int drive);
-int                     ui_action_id_fliplist_load    (int unit, int drive);
-int                     ui_action_id_fliplist_save    (int unit, int drive);
-int                     ui_action_id_drive_attach     (int unit, int drive);
-int                     ui_action_id_drive_detach     (int unit, int drive);
+int                     ui_action_id_fliplist_add       (int unit, int drive);
+int                     ui_action_id_fliplist_remove    (int unit, int drive);
+int                     ui_action_id_fliplist_next      (int unit, int drive);
+int                     ui_action_id_fliplist_previous  (int unit, int drive);
+int                     ui_action_id_fliplist_clear     (int unit, int drive);
+int                     ui_action_id_fliplist_load      (int unit, int drive);
+int                     ui_action_id_fliplist_save      (int unit, int drive);
+int                     ui_action_id_drive_attach       (int unit, int drive);
+int                     ui_action_id_drive_detach       (int unit, int drive);
+int                     ui_action_id_drive_reset        (int unit);
+int                     ui_action_id_drive_reset_config (int unit);
+int                     ui_action_id_drive_reset_install(int unit);
 
 /* Main API */
 void                    ui_actions_init          (void);
-void                    ui_actions_set_dispatch  (void (*dispatch)(const ui_action_map_t *));
+void                    ui_actions_set_dispatch  (void (*dispatch)(ui_action_map_t *));
 void                    ui_actions_shutdown      (void);
 void                    ui_actions_register      (const ui_action_map_t *mappings);
 
