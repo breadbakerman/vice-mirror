@@ -210,18 +210,11 @@ typedef struct drive_type_info_s {
 struct gcr_s;
 struct disk_image_s;
 
-/* TODO: more parts of that struct should go into diskunit_context_s.
-   candidates: clk, clock_frequency
- */
 typedef struct drive_s {
-    unsigned int unit;  /* 0 ... NUM_DISK_UNITS-1 */
     unsigned int drive; /* DRIVE_NUMBER_MIN ... DRIVE_NUMBER_MAX */
 
     /* Pointer to the containing diskunit_context */
     struct diskunit_context_s *diskunit;
-
-    /* Pointer to the diskunit clock.  */
-    CLOCK *clk;
 
     int led_status;
 

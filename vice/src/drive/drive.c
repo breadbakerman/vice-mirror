@@ -189,8 +189,6 @@ int drive_init(void)
         for (d = 0; d < NUM_DRIVES; d++) {
             drive = diskunit->drives[d];
 
-            drive->clk = &diskunit_clk[unit];
-            drive->unit = unit;
             drive->drive = d;
             drive->diskunit = diskunit_context[unit];
         }
@@ -251,8 +249,8 @@ int drive_init(void)
             drive->P64_image_loaded = 0;
             drive->P64_dirty = 0;
             drive->read_only = 0;
-            drive->led_last_change_clk = *(drive->clk);
-            drive->led_last_uiupdate_clk = *(drive->clk);
+            drive->led_last_change_clk = *(diskunit->clk_ptr);
+            drive->led_last_uiupdate_clk = *(diskunit->clk_ptr);
             drive->led_active_ticks = 0;
             drive->read_write_mode = 1;
 
@@ -493,7 +491,7 @@ int drive_enable(diskunit_context_t *drv)
     }
 
     DBG(("drive_enable unit: %d", 8 + drv->mynumber));
-    resources_get_int_sprintf("Drive%dTrueEmulation", &drive_true_emulation, 8 + drv->mynumber);
+    resources_get_int_sprintf("Drive%uTrueEmulation", &drive_true_emulation, 8 + drv->mynumber);
 
     /* Always disable kernal traps. */
     if (!drive_true_emulation) {
@@ -537,8 +535,8 @@ void drive_disable(diskunit_context_t *drv)
        drive initialization.  */
     drv->enable = 0;
 
-    DBG(("drive_disable unit: %d", 8 + drv->mynumber));
-    resources_get_int_sprintf("Drive%dTrueEmulation", &drive_true_emulation, 8 + drv->mynumber);
+    DBG(("drive_disable unit: %u", 8 + drv->mynumber));
+    resources_get_int_sprintf("Drive%uTrueEmulation", &drive_true_emulation, 8 + drv->mynumber);
 
     if (rom_loaded) {
         if (drv->type == DRIVE_TYPE_2000 || drv->type == DRIVE_TYPE_4000 ||
@@ -604,8 +602,8 @@ void drive_reset(void)
         for (d = 0; d < NUM_DRIVES; d++) {
             drive_t *drive = unit->drives[d];
 
-            drive->led_last_change_clk = *(drive->clk);
-            drive->led_last_uiupdate_clk = *(drive->clk);
+            drive->led_last_change_clk = *(unit->clk_ptr);
+            drive->led_last_uiupdate_clk = *(unit->clk_ptr);
             drive->led_active_ticks = 0;
         }
         is_jammed[dnr] = false;
@@ -746,7 +744,7 @@ void drive_move_head(int step, drive_t *drive)
         log_warning(drive_log, "ambiguous step count (%d)", step);
     }
     drive_gcr_data_writeback(drive);
-    drive_sound_head(drive->current_half_track, step, drive->unit);
+    drive_sound_head(drive->current_half_track, step, drive->diskunit->mynumber);
     drive_set_half_track(drive->current_half_track + step, drive->side, drive);
 }
 
@@ -889,15 +887,15 @@ static void drive_led_update(diskunit_context_t *unit, drive_t *drive, int base)
         my_led_status = drive->led_status;
     }
 
-    /* Update remaining led clock ticks. TODO: move clk to diskunit. */
+    /* Update remaining led clock ticks. */
     if (drive->led_status & 1) {
-        drive->led_active_ticks += *(drive->clk)
+        drive->led_active_ticks += *(unit->clk_ptr)
                                    - drive->led_last_change_clk;
     }
-    drive->led_last_change_clk = *(drive->clk);
+    drive->led_last_change_clk = *(unit->clk_ptr);
 
-    led_period = *(drive->clk) - drive->led_last_uiupdate_clk;
-    drive->led_last_uiupdate_clk = *(drive->clk);
+    led_period = *(unit->clk_ptr) - drive->led_last_uiupdate_clk;
+    drive->led_last_uiupdate_clk = *(unit->clk_ptr);
 
     if (led_period == 0) {
         return;
@@ -921,7 +919,7 @@ static void drive_led_update(diskunit_context_t *unit, drive_t *drive, int base)
 
     if (led_pwm1 != drive->led_last_pwm
         || my_led_status != drive->old_led_status) {
-        ui_display_drive_led(drive->unit, base, led_pwm1,
+        ui_display_drive_led(drive->diskunit->mynumber, base, led_pwm1,
                              (my_led_status & 2) ? 1000 : 0);
         drive->led_last_pwm = led_pwm1;
         drive->old_led_status = my_led_status;
@@ -1061,7 +1059,6 @@ static void drive_setup_context_for_unit(diskunit_context_t *drv,
         /* TODO: init functions for allocated memory */
         drv->drives[d]->image = NULL;
         drv->drives[d]->diskunit = drv;
-        drv->drives[d]->unit = unr;
         drv->drives[d]->drive = d;
     }
 
